@@ -43,7 +43,7 @@ func NewNATVSEngine(workspace string) *NATVSEngine {
 	return &NATVSEngine{
 		Config: &OrchestrationConfig{
 			WorkspaceRoot: workspace,
-			RegistryPath:  filepath.Join(workspace, "00FLOW/sForge/90100-rehydration-seed"),
+			RegistryPath:  filepath.Join(workspace, "00flow/s-forge/90100-rehydration-seed"),
 			OutputChannel: make(chan string, 100),
 		},
 		State: PhaseNegotiate,
@@ -95,6 +95,62 @@ func (e *NATVSEngine) Assimilation(ctx context.Context, targetWorkspace string) 
 func (e *NATVSEngine) Transform(ctx context.Context, action string) error {
 	e.State = PhaseTransform
 	log.Printf("[NATVS] Phase 3: Executing Transformation target action: '%s'...", action)
+	
+	if action == "refactor-taxonomy-casing" {
+		replacements := map[string]string{
+			"00FLOW": "00flow",
+			"000ALL": "000all",
+			"sForge": "s-forge",
+			"sHydration": "s-hydration",
+			"sSeed": "s-seed",
+			"sLatentLingua": "s-latentlingua",
+			"sAgents": "s-agents",
+			"sNatives": "s-natives",
+			"sAether": "s-aether",
+			"sHermes": "s-hermes",
+			"sCognition": "s-cognition",
+		}
+		
+		targetDir := filepath.Join(e.Config.WorkspaceRoot, "00flow")
+		log.Printf("[NATVS] Scanning and reviewing %s for casing violations...", targetDir)
+		
+		modifiedFiles := 0
+		err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			ext := filepath.Ext(path)
+			if ext != ".go" && ext != ".md" && ext != ".harness" && ext != ".mod" && ext != ".work" && ext != ".txt" {
+				return nil
+			}
+			
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+			strContent := string(content)
+			changed := false
+			
+			for oldStr, newStr := range replacements {
+				if strings.Contains(strContent, oldStr) {
+					strContent = strings.ReplaceAll(strContent, oldStr, newStr)
+					changed = true
+				}
+			}
+			
+			if changed {
+				os.WriteFile(path, []byte(strContent), info.Mode())
+				log.Printf("  [Fix] Aligned casing in: %s", filepath.Base(path))
+				modifiedFiles++
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("refactor walk failed: %w", err)
+		}
+		log.Printf("[NATVS] Transformation complete. Refactored %d files to adhere to AAIF grammar.", modifiedFiles)
+		return nil
+	}
 	
 	// In-memory or subprocess dynamic execution stub
 	time.Sleep(5 * time.Millisecond)
@@ -179,22 +235,22 @@ func main() {
 	ctx := context.Background()
 	
 	// Verify self-conformance
-	err := engine.Negotiate(ctx, "00FLOW/sAether")
+	err := engine.Negotiate(ctx, "00flow/s-aether")
 	if err != nil {
 		log.Fatalf("Negotiation check failed: %v", err)
 	}
 	
-	err = engine.Assimilation(ctx, "00FLOW/sAether")
+	err = engine.Assimilation(ctx, "00flow/s-aether")
 	if err != nil {
 		log.Fatalf("Assimilation check failed: %v", err)
 	}
 	
-	err = engine.Transform(ctx, "migrate-workspace")
+	err = engine.Transform(ctx, "refactor-taxonomy-casing")
 	if err != nil {
 		log.Fatalf("Transformation check failed: %v", err)
 	}
 	
-	err = engine.Verification(ctx, "sov.fleet/sAether")
+	err = engine.Verification(ctx, "sov.fleet/s-aether")
 	if err != nil {
 		log.Fatalf("Verification check failed: %v", err)
 	}

@@ -13,7 +13,7 @@ func TestNATVSLifecyclePhases(t *testing.T) {
 	defer cancel()
 
 	// 1. Negotiation Phase
-	err := engine.Negotiate(ctx, "00FLOW/sAether")
+	err := engine.Negotiate(ctx, "00flow/s-aether")
 	if err != nil {
 		t.Fatalf("Negotiation phase failed: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestNATVSLifecyclePhases(t *testing.T) {
 	}
 
 	// 2. Assimilation Phase
-	err = engine.Assimilation(ctx, "00FLOW/sAether")
+	err = engine.Assimilation(ctx, "00flow/s-aether")
 	if err != nil {
 		t.Fatalf("Assimilation phase failed: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestNATVSLifecyclePhases(t *testing.T) {
 	}
 
 	// 4. Verification Phase
-	err = engine.Verification(ctx, "sov.fleet/sAether")
+	err = engine.Verification(ctx, "sov.fleet/s-aether")
 	if err != nil {
 		t.Fatalf("Verification phase failed: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 	defer conn.Close()
 
 	// Dispatch SACP command frame
-	cmdMsg := "CALL:orchestrate-workspace-migration;TARGET=sAether"
+	cmdMsg := "CALL:orchestrate-workspace-migration;TARGET=s-aether"
 	_, err = conn.Write([]byte(cmdMsg))
 	if err != nil {
 		t.Fatalf("Failed to write to UDP socket: %v", err)

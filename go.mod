@@ -1,4 +1,4 @@
-module sov.fleet/sNatives
+module sov.fleet/s-natives
 
 go 1.24
 
