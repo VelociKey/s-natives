@@ -1,4 +1,4 @@
-module sov.fleet/sNatvsEngine
+module sov.fleet/sNatives
 
 go 1.24
 

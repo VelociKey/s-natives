@@ -133,7 +133,7 @@ func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 	}
 	defer conn.Close()
 	
-	log.Printf("[NATVS Engine Daemon] Live on UDP SACP Port %d. Awaiting fleet instructions...", port)
+	log.Printf("[sNatives Engine Daemon] Live on UDP SACP Port %d. Awaiting fleet instructions...", port)
 	
 	buf := make([]byte, 1024)
 	go func() {
@@ -172,7 +172,7 @@ func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 
 func main() {
 	log.Println("=========================================================")
-	log.Println("           NATVS ENGINE SOVEREIGN ORCHESTRATOR           ")
+	log.Println("         SOVEREIGN NATIVES ORCHESTRATOR          ")
 	log.Println("=========================================================")
 	
 	engine := NewNATVSEngine("C:\\aCogSpaceSeed")
@@ -204,5 +204,5 @@ func main() {
 		log.Fatalf("Synthesis check failed: %v", err)
 	}
 	
-	log.Println("[NATVS Engine] Self-conformance successfully verified!")
+	log.Println("[sNatives Engine] Self-conformance successfully verified!")
 }

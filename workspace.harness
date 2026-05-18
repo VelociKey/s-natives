@@ -1,4 +1,4 @@
-workspace: natvs_engine
+workspace: natives
 
 go_build {
     type: NATIVE
