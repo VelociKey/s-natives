@@ -1,0 +1,7 @@
+workspace: natvs_engine
+
+go_build {
+    type: NATIVE
+    src: "."
+    out: "natvs-engine.exe"
+}
