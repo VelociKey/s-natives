@@ -34,7 +34,6 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 				"s-latentlingua",
 				"s-natives",
 				"s-seed",
-				"s-mcp",
 				"s-adk",
 				"s-a2a",
 				"s-aether",

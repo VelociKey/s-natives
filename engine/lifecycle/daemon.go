@@ -1,15 +1,16 @@
 package lifecycle
-
+ 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
-
+	"time"
+ 
 	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
 )
-
+ 
 // RunDaemon sets up the UDP SACP telemetry control stream.
 func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
@@ -21,6 +22,18 @@ func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 	
 	slog.Info("s-natives Engine Daemon live", "port", port)
 	
+	timeout := e.Config.IdleTimeout
+	if timeout <= 0 {
+		timeout = 15 * time.Minute
+	}
+	
+	// Create watchdog timer
+	watchdog := time.AfterFunc(timeout, func() {
+		slog.Warn("Watchdog inactivity timeout reached. Shutting down daemon...", "timeout", timeout)
+		conn.Close()
+	})
+	defer watchdog.Stop()
+ 
 	buf := make([]byte, 1024)
 	go func() {
 		<-ctx.Done()
@@ -36,6 +49,9 @@ func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 			slog.Error("Daemon read failed", "err", err)
 			continue
 		}
+		
+		// Reset watchdog timer on packet activity
+		watchdog.Reset(timeout)
 		
 		slog.Debug("Daemon received packet", "bytes", n, "remote", clientAddr)
 		

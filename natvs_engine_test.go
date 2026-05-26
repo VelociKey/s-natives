@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
+	"sov.fleet/s-natives/engine/lifecycle"
 )
 
 func TestNATVSComprehensive(t *testing.T) {
@@ -38,7 +40,6 @@ func TestNATVSComprehensive(t *testing.T) {
 		"s-latentlingua",
 		"s-natives",
 		"s-seed",
-		"s-mcp",
 		"s-adk",
 		"s-a2a",
 	}
@@ -63,7 +64,7 @@ func TestNATVSComprehensive(t *testing.T) {
 		t.Fatalf("Failed to copy conformance.exe: %v", errCopy)
 	}
 	
-	gkFile := writeMockGatekeeper(t, tempDir)
+
 	
 	// Write dummy files for casing refactoring tests
 	dummyGoFile := filepath.Join(tempDir, "00flow/s-forge/80200-rehydration-seed/test.go")
@@ -89,7 +90,7 @@ func TestNATVSComprehensive(t *testing.T) {
 	defer cancel()
 	
 	// 1. Negotiation Phase
-	err = engine.Negotiate(ctx, "00flow/s-mcp")
+	err = engine.Negotiate(ctx, "00flow/s-natives")
 	if err != nil {
 		t.Fatalf("Negotiation phase failed: %v", err)
 	}
@@ -148,23 +149,7 @@ func TestNATVSComprehensive(t *testing.T) {
 		t.Errorf("Ignored 9xxxx file was modified: %q", strIgnored)
 	}
 	
-	// Verify that optimize-s-mcp refactoring works
-	err = engine.Transform(ctx, "optimize-s-mcp")
-	if err != nil {
-		t.Fatalf("Transformation optimize-s-mcp failed: %v", err)
-	}
 
-	optContent, err := os.ReadFile(gkFile)
-	if err != nil {
-		t.Fatalf("Failed to read conformed gatekeeper: %v", err)
-	}
-	optStr := string(optContent)
-	if !strings.Contains(optStr, "ecdsa.GenerateKey") {
-		t.Error("Expected conformed gatekeeper to contain ECDSA key generation")
-	}
-	if !strings.Contains(optStr, "nonceQueue []nonceEntry") {
-		t.Error("Expected conformed gatekeeper to track nonceQueue")
-	}
 
 	// Check coverage of Transformation's unrecognized action fallback
 	err = engine.Transform(ctx, "unknown-action")
@@ -289,17 +274,14 @@ func TestMainFunc(t *testing.T) {
 	tempDir := t.TempDir()
 	dirs := []string{
 		filepath.Join(tempDir, "000all/s-cognition"),
-		filepath.Join(tempDir, "00flow/s-aether"),
+		filepath.Join(tempDir, "00flow/s-natives"),
 		filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed"),
-		filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper"),
 	}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			t.Fatalf("Failed to create temp directory for main check: %v", err)
 		}
 	}
-	
-	_ = writeMockGatekeeper(t, tempDir)
 	
 	t.Setenv("TEST_WORKSPACE_ROOT", tempDir)
 	main()
@@ -388,90 +370,7 @@ func TestMainFuncFailure(t *testing.T) {
 	}
 }
 
-func writeMockGatekeeper(t *testing.T, tempDir string) string {
-	dir := filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper")
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatalf("Failed to create mock gatekeeper dir: %v", err)
-	}
-	path := filepath.Join(dir, "gatekeeper.go")
-	content := `package gatekeeper
-import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"math/big"
-	"net"
-	"sync"
-	"time"
 
-	"github.com/zeebo/blake3"
-)
-// Gatekeeper is the Zero-Trust Enforcer.
-type Gatekeeper struct {
-	mu         sync.Mutex
-	seenNonces map[string]time.Time
-	auditor    *CryptosealAuditor
-}
-
-func NewGatekeeper() *Gatekeeper {
-	return &Gatekeeper{
-		seenNonces: make(map[string]time.Time),
-		auditor:    NewCryptosealAuditor(),
-	}
-}
-
-func (g *Gatekeeper) InterrogateEnvelope(env SignedEnvelope, secret []byte, maxAge time.Duration) error {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	// Prune expired nonces to control memory footprints
-	for nonce, ts := range g.seenNonces {
-		if now.Sub(ts) > maxAge {
-			delete(g.seenNonces, nonce)
-		}
-	}
-
-	if _, exists := g.seenNonces[env.Nonce]; exists {
-		return errors.New("REJECTED: Replay attack detected. Nonce already processed")
-	}
-
-	// Register nonce
-	g.seenNonces[env.Nonce] = env.Timestamp
-	return nil
-}
-
-func GeneratePrecomputedMTLS() (*PrecomputedTLSConfig, error) {
-	// 1. Generate ephemeral private keys
-	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate CA key: %w", err)
-	}
-
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate server key: %w", err)
-	}
-
-	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate client key: %w", err)
-	}
-	return nil, nil
-}
-`
-	err = os.WriteFile(path, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write mock gatekeeper file: %v", err)
-	}
-	return path
-}
 
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
@@ -487,4 +386,124 @@ func copyFile(src, dst string) error {
 	_, err = io.Copy(out, in)
 	return err
 }
+
+func TestNATVSDaemonWatchdogTimeout(t *testing.T) {
+	engine := NewNATVSEngine(t.TempDir())
+	engine.Config.IdleTimeout = 100 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	port := 52999
+	doneChan := make(chan error, 1)
+
+	go func() {
+		err := engine.RunDaemon(ctx, port)
+		doneChan <- err
+	}()
+
+	select {
+	case err := <-doneChan:
+		if err != nil {
+			t.Errorf("Daemon exited with error: %v", err)
+		}
+	case <-time.After(1 * time.Second):
+		t.Error("Daemon did not terminate automatically after inactivity watchdog timeout")
+	}
+}
+
+func TestNATVSCoordinatorLifecycle(t *testing.T) {
+	tempWS := t.TempDir()
+	engine := NewNATVSEngine(tempWS)
+	engine.Config.IdleTimeout = 500 * time.Millisecond
+
+	// 1. Start the coordinator daemon manually
+	coord := lifecycle.NewCoordinator(engine)
+	err := coord.Start()
+	if err != nil {
+		t.Fatalf("Failed to start coordinator: %v", err)
+	}
+	defer coord.Close()
+
+	// 2. Connect to the coordinator (first client)
+	netType, addr := engine.GetCoordinationEndpoint()
+	if netType == "unix" && len(addr) >= 104 {
+		netType = "tcp"
+		addr = fmt.Sprintf("127.0.0.1:%d", engine.GetDeterministicTCPPort())
+	}
+	conn1, err := net.Dial(netType, addr)
+	if err != nil {
+		t.Fatalf("Failed to dial coordinator (netType=%s, addr=%s): %v", netType, addr, err)
+	}
+	defer conn1.Close()
+
+	// Send command payload
+	_, err = conn1.Write([]byte("HELLO"))
+	if err != nil {
+		t.Fatalf("Failed to write HELLO: %v", err)
+	}
+
+	buf := make([]byte, 1024)
+	n, err := conn1.Read(buf)
+	if err != nil {
+		t.Fatalf("Failed to read ACK: %v", err)
+	}
+	if string(buf[:n]) != "ACK: HELLO" {
+		t.Errorf("Expected ACK: HELLO, got: %q", string(buf[:n]))
+	}
+
+	// 3. Connect to the coordinator (second client - adoption)
+	conn2, err := net.Dial(netType, addr)
+	if err != nil {
+		t.Fatalf("Failed to dial coordinator again (adoption): %v", err)
+	}
+	defer conn2.Close()
+
+	_, err = conn2.Write([]byte("WORLD"))
+	if err != nil {
+		t.Fatalf("Failed to write WORLD: %v", err)
+	}
+
+	n, err = conn2.Read(buf)
+	if err != nil {
+		t.Fatalf("Failed to read ACK 2: %v", err)
+	}
+	if string(buf[:n]) != "ACK: WORLD" {
+		t.Errorf("Expected ACK: WORLD, got: %q", string(buf[:n]))
+	}
+}
+
+func TestNATVSCoordinatorStaleSocketCleaning(t *testing.T) {
+	tempWS := t.TempDir()
+	engine := NewNATVSEngine(tempWS)
+	
+	netType, addr := engine.GetCoordinationEndpoint()
+	if netType == "unix" && len(addr) < 104 {
+		// Create parent directory
+		err := os.MkdirAll(filepath.Dir(addr), 0755)
+		if err != nil {
+			t.Fatalf("Failed to create socket dir: %v", err)
+		}
+		
+		// Create a stale empty file representing a dead socket
+		err = os.WriteFile(addr, []byte("stale"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write stale socket file: %v", err)
+		}
+		
+		// Run DialOrSpawnCoordinator. Since there's no actual listener, it will fail
+		// but it must have cleaned up the stale file during its run.
+		_, err = lifecycle.DialOrSpawnCoordinator(engine)
+		if err == nil {
+			t.Fatal("Expected DialOrSpawnCoordinator to fail, but it succeeded")
+		}
+		
+		// Verify that the stale socket file was successfully unlinked
+		if _, err := os.Stat(addr); !os.IsNotExist(err) {
+			t.Errorf("Expected stale socket file to be unlinked/deleted, but it still exists")
+		}
+	}
+}
+
+
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"sov.fleet/s-natives/engine/lifecycle"
 )
@@ -42,6 +43,7 @@ func main() {
 	slog.Info("=========================================================")
 	
 	allowedWorkspaces := make([]string, 0, len(os.Args))
+	var idleTimeoutOverride time.Duration
 	argsFiltered := make([]string, 0, len(os.Args))
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "--workspaces=") {
@@ -52,6 +54,13 @@ func main() {
 				if part != "" {
 					allowedWorkspaces = append(allowedWorkspaces, part)
 				}
+			}
+		} else if strings.HasPrefix(arg, "--idle-timeout=") {
+			timeoutStr := strings.TrimPrefix(arg, "--idle-timeout=")
+			if parsed, err := time.ParseDuration(timeoutStr); err == nil {
+				idleTimeoutOverride = parsed
+			} else {
+				slog.Error("Invalid idle-timeout duration", "value", timeoutStr, "error", err)
 			}
 		} else {
 			argsFiltered = append(argsFiltered, arg)
@@ -67,6 +76,9 @@ func main() {
 	if len(allowedWorkspaces) > 0 {
 		engine.Config.AllowedWorkspaces = allowedWorkspaces
 	}
+	if idleTimeoutOverride > 0 {
+		engine.Config.IdleTimeout = idleTimeoutOverride
+	}
 	ctx := context.Background()
 	
 	if len(os.Args) > 1 {
@@ -78,6 +90,16 @@ func main() {
 		
 		slog.Info("Received Goal", "objective", objective)
 		slog.Info("Context Path", "path", contextPath)
+
+		if objective == "daemon" {
+			slog.Info("Running as background coordination daemon...")
+			coordinator := lifecycle.NewCoordinator(engine)
+			if err := coordinator.Start(); err != nil {
+				logFatal("Failed to start coordinator daemon: %v", err)
+			}
+			<-coordinator.ShutdownContext().Done()
+			return
+		}
 
 		if strings.Contains(strings.ToLower(objective), "remediate") || strings.Contains(strings.ToLower(objective), "remediation") {
 			targetWS := contextPath
@@ -134,12 +156,12 @@ func main() {
 	}
 
 	// Verify self-conformance fallback
-	err := engine.Negotiate(ctx, "00flow/s-mcp")
+	err := engine.Negotiate(ctx, "00flow/s-natives")
 	if err != nil {
 		logFatal("Negotiation check failed: %v", err)
 	}
 	
-	err = engine.Assimilation(ctx, "00flow/s-mcp")
+	err = engine.Assimilation(ctx, "00flow/s-natives")
 	if err != nil {
 		logFatal("Assimilation check failed: %v", err)
 	}
@@ -149,17 +171,12 @@ func main() {
 		logFatal("Transformation check failed: %v", err)
 	}
 	
-	err = engine.Transform(ctx, "optimize-s-mcp")
-	if err != nil {
-		logFatal("Transformation check failed: %v", err)
-	}
-	
 	err = engine.Verification(ctx, "all-00flow-workspaces")
 	if err != nil {
 		logFatal("Verification check failed: %v", err)
 	}
 	
-	err = engine.Synthesis(ctx, "mcp_wasm_gc.wasm")
+	err = engine.Synthesis(ctx, "natives_wasm_gc.wasm")
 	if err != nil {
 		logFatal("Synthesis check failed: %v", err)
 	}

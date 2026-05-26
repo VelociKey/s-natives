@@ -160,49 +160,6 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string) error {
 		return nil
 	}
 
-	if action == "optimize-s-mcp" {
-		targetFile := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-mcp/00200-logic-libraries/gatekeeper/gatekeeper.go")
-		log.Printf("[NATVS] Optimizing algorithms and code organization in: %s", targetFile)
-		content, err := os.ReadFile(targetFile)
-		if err != nil {
-			return fmt.Errorf("failed to read gatekeeper.go: %w", err)
-		}
-		strContent := strings.ReplaceAll(string(content), "\r\n", "\n")
-
-		// 1. Optimize Imports: replace crypto/rsa with crypto/ecdsa and crypto/elliptic
-		if strings.Contains(strContent, "\"crypto/rsa\"") {
-			strContent = strings.Replace(strContent, "\"crypto/rsa\"", "\"crypto/ecdsa\"\n\t\"crypto/elliptic\"", 1)
-		}
-
-		// 2. Optimize GeneratePrecomputedMTLS: replace RSA key generation with ECDSA P-256
-		if strings.Contains(strContent, RsaGenPattern) {
-			strContent = strings.Replace(strContent, RsaGenPattern, EcdsaGenReplacement, 1)
-		}
-
-		// 3. Inject nonceEntry struct and add nonceQueue to Gatekeeper struct
-		if strings.Contains(strContent, GatekeeperStructPattern) {
-			strContent = strings.Replace(strContent, GatekeeperStructPattern, GatekeeperStructReplacement, 1)
-		}
-
-		// 4. Update NewGatekeeper constructor to initialize nonceQueue
-		if strings.Contains(strContent, NewGatekeeperPattern) {
-			strContent = strings.Replace(strContent, NewGatekeeperPattern, NewGatekeeperReplacement, 1)
-		}
-
-		// 5. Optimize seenNonces linear pruning to O(1) queue-based pruning in InterrogateEnvelope
-		if strings.Contains(strContent, PrunePattern) {
-			strContent = strings.Replace(strContent, PrunePattern, PruneReplacement, 1)
-		}
-
-		err = os.WriteFile(targetFile, []byte(strContent), 0644)
-		if err != nil {
-			return fmt.Errorf("failed to write optimized gatekeeper.go: %w", err)
-		}
-
-		log.Printf("[NATVS] Optimization transformation applied successfully to gatekeeper.go")
-		return nil
-	}
-
 	// In-memory or subprocess dynamic execution stub
 	time.Sleep(5 * time.Millisecond)
 	log.Printf("[NATVS] Transformation successfully generated output delta.")

@@ -1,10 +1,12 @@
 package lifecycle
-
+ 
 import (
+	"hash/fnv"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // NATVSPhase represents a single state in the sovereign orchestration lifecycle.
@@ -24,6 +26,7 @@ type OrchestrationConfig struct {
 	RegistryPath      string
 	OutputChannel     chan string
 	AllowedWorkspaces []string
+	IdleTimeout       time.Duration
 	Mu                sync.Mutex
 }
 
@@ -51,7 +54,21 @@ func NewNATVSEngine(workspace string) *NATVSEngine {
 			RegistryPath:      filepath.Join(workspace, "00flow/s-forge/90100-rehydration-seed"),
 			OutputChannel:     make(chan string, 100),
 			AllowedWorkspaces: allowed,
+			IdleTimeout:       15 * time.Minute,
 		},
 		State: PhaseNegotiate,
 	}
+}
+
+// GetCoordinationEndpoint returns the network type and address (UDS path) for coordination.
+func (e *NATVSEngine) GetCoordinationEndpoint() (network, address string) {
+	sockPath := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-fab-aides/c0990-ephemeral-scratch/sacp.sock")
+	return "unix", sockPath
+}
+
+// GetDeterministicTCPPort returns a deterministic private TCP port based on workspace root hashing.
+func (e *NATVSEngine) GetDeterministicTCPPort() int {
+	h := fnv.New32a()
+	h.Write([]byte(filepath.Clean(e.Config.WorkspaceRoot)))
+	return 49152 + int(h.Sum32()%16383)
 }
