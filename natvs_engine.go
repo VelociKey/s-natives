@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/exec"
@@ -2805,7 +2806,7 @@ func (e *NATVSEngine) runConformanceCheck(ctx context.Context, targetDir string)
 	cmd.Stderr = &logBuf
 	
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "[-] Conformance check failed for directory: %s\nOutput:\n%s\n", targetDir, logBuf.String())
+		slog.Error("Conformance check failed for directory", "directory", targetDir, "output", logBuf.String())
 		return fmt.Errorf("conformance check failed: %w", err)
 	}
 	log.Printf("[NATVS Conformance] Conformance checks passed for directory: %s", targetDir)
@@ -2968,7 +2969,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 			
 			runErr := cmd.Run()
 			if runErr != nil {
-				fmt.Fprintf(os.Stderr, "[-] Tests failed in workspace: %s\nOutput:\n%s\n", ws, logBuf.String())
+				slog.Error("Tests failed in workspace", "workspace", ws, "output", logBuf.String())
 				log.Printf("[NATVS] Tests failed in workspace: %s. Error: %v", ws, runErr)
 				failedWorkspaces = append(failedWorkspaces, ws+" (tests)")
 			} else {
@@ -3011,7 +3012,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 	cmd.Stdout = &logBuf
 	cmd.Stderr = &logBuf
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "[-] Verification failed for package: %s\nOutput:\n%s\n", testPackage, logBuf.String())
+		slog.Error("Verification failed for package", "package", testPackage, "output", logBuf.String())
 		return fmt.Errorf("verification failed for package %s: %w", testPackage, err)
 	}
 	

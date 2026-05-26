@@ -1,7 +1,7 @@
 # Go Code Topology Report (weBNF)
 [code-topology "s-natives"] {
     module = "sov.fleet/s-natives" ;
-    timestamp = "2026-05-23T04:43:28Z" ;
+    timestamp = "2026-05-26T01:50:59Z" ;
     target_dir = "C:/aCogSpaceSeed/00flow/s-natives" ;
 
     packages = [
@@ -9,6 +9,7 @@
     ] ;
 
     internal_imports = [
+        "sov.fleet/s-fab-aides/81000-active-source/pkg/bash",
         "sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
     ] ;
 
@@ -16,8 +17,8 @@
     ] ;
 
     structs = [
-        "name: OrchestrationConfig | file: natvs_engine.go | fields: 4 | methods: ",
-        "name: NATVSEngine | file: natvs_engine.go | fields: 2 | methods: Negotiate,Assimilation,Transform,runConformanceCheck,Verification,Synthesis,RunDaemon"
+        "name: OrchestrationConfig | file: natvs_engine.go | fields: 5 | methods: ",
+        "name: NATVSEngine | file: natvs_engine.go | fields: 2 | methods: Negotiate,Assimilation,Transform,runConformanceCheck,discoverWorkspaces,discoverGoBinary,Verification,Synthesis,RunDaemon"
     ] ;
 
     functions = [
