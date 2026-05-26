@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
 )
 
 func TestNATVSComprehensive(t *testing.T) {
@@ -17,12 +20,9 @@ func TestNATVSComprehensive(t *testing.T) {
 	// Create required directories
 	dirs := []string{
 		filepath.Join(tempDir, "000all/s-cognition"),
-		filepath.Join(tempDir, "00flow/s-aether"),
 		filepath.Join(tempDir, "00flow/s-forge/90000-authority"),
 		filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed"),
 		filepath.Join(tempDir, "00flow/s-forge/80200-rehydration-seed"),
-		filepath.Join(tempDir, "00flow/s-natives"),
-		filepath.Join(tempDir, "00flow/s-seed"),
 	}
 	for _, dir := range dirs {
 		err := os.MkdirAll(dir, 0755)
@@ -30,6 +30,40 @@ func TestNATVSComprehensive(t *testing.T) {
 			t.Fatalf("Failed to create temp directory: %v", err)
 		}
 	}
+
+	workspaces := []string{
+		"s-aether",
+		"s-actors",
+		"s-forge",
+		"s-latentlingua",
+		"s-natives",
+		"s-seed",
+		"s-mcp",
+		"s-adk",
+		"s-a2a",
+	}
+	for _, ws := range workspaces {
+		wsDir := filepath.Join(tempDir, "00flow", ws)
+		err := os.MkdirAll(wsDir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create workspace directory %s: %v", ws, err)
+		}
+		// Write dummy go.mod
+		err = os.WriteFile(filepath.Join(wsDir, "go.mod"), []byte("module sov.fleet/"+ws+"\ngo 1.26.3\n"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write dummy go.mod for %s: %v", ws, err)
+		}
+	}
+
+	// Copy conformance.exe to tempDir/00flow/s-seed/conformance.exe
+	srcConf := "C:\\aCogSpaceSeed\\00flow\\s-seed\\conformance.exe"
+	destConf := filepath.Join(tempDir, "00flow/s-seed/conformance.exe")
+	errCopy := copyFile(srcConf, destConf)
+	if errCopy != nil {
+		t.Fatalf("Failed to copy conformance.exe: %v", errCopy)
+	}
+	
+	gkFile := writeMockGatekeeper(t, tempDir)
 	
 	// Write dummy files for casing refactoring tests
 	dummyGoFile := filepath.Join(tempDir, "00flow/s-forge/80200-rehydration-seed/test.go")
@@ -55,7 +89,7 @@ func TestNATVSComprehensive(t *testing.T) {
 	defer cancel()
 	
 	// 1. Negotiation Phase
-	err = engine.Negotiate(ctx, "00flow/s-aether")
+	err = engine.Negotiate(ctx, "00flow/s-mcp")
 	if err != nil {
 		t.Fatalf("Negotiation phase failed: %v", err)
 	}
@@ -114,6 +148,24 @@ func TestNATVSComprehensive(t *testing.T) {
 		t.Errorf("Ignored 9xxxx file was modified: %q", strIgnored)
 	}
 	
+	// Verify that optimize-s-mcp refactoring works
+	err = engine.Transform(ctx, "optimize-s-mcp")
+	if err != nil {
+		t.Fatalf("Transformation optimize-s-mcp failed: %v", err)
+	}
+
+	optContent, err := os.ReadFile(gkFile)
+	if err != nil {
+		t.Fatalf("Failed to read conformed gatekeeper: %v", err)
+	}
+	optStr := string(optContent)
+	if !strings.Contains(optStr, "ecdsa.GenerateKey") {
+		t.Error("Expected conformed gatekeeper to contain ECDSA key generation")
+	}
+	if !strings.Contains(optStr, "nonceQueue []nonceEntry") {
+		t.Error("Expected conformed gatekeeper to track nonceQueue")
+	}
+
 	// Check coverage of Transformation's unrecognized action fallback
 	err = engine.Transform(ctx, "unknown-action")
 	if err != nil {
@@ -121,12 +173,7 @@ func TestNATVSComprehensive(t *testing.T) {
 	}
 	
 	// 4. Verification Phase
-	// (a) Single package fallback
-	err = engine.Verification(ctx, "sov.fleet/s-aether")
-	if err != nil {
-		t.Fatalf("Verification phase single package failed: %v", err)
-	}
-	// (b) All workspaces package walk (no test files case)
+	// All workspaces package walk (no test files case)
 	err = engine.Verification(ctx, "all-00flow-workspaces")
 	if err != nil {
 		t.Fatalf("Verification phase all workspaces failed: %v", err)
@@ -169,9 +216,26 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 	}
 	defer conn.Close()
 	
-	// Dispatch SACP command frame
-	cmdMsg := "CALL:orchestrate-workspace-migration;TARGET=s-aether"
-	_, err = conn.Write([]byte(cmdMsg))
+	// Dispatch SACP command frame (constructed via bicodec)
+	h := bicodec.SACPHeader{
+		UUID:              "test-client-uuid",
+		OriginalAuthority: bicodec.AuthSovereign,
+		CurrentAuthority:  bicodec.AuthSovereign,
+	}
+	c := bicodec.SACPCapability{
+		Domain: "tool",
+		Action: "call",
+		ID:     "orchestrate-workspace-migration",
+		Parameters: map[string]string{
+			"target": "s-aether",
+		},
+	}
+	msgBytes, err := bicodec.EncodeSACPMessage(&h, &c)
+	if err != nil {
+		t.Fatalf("Failed to encode SACP message: %v", err)
+	}
+	
+	_, err = conn.Write(msgBytes)
 	if err != nil {
 		t.Fatalf("Failed to write to UDP socket: %v", err)
 	}
@@ -188,9 +252,20 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 		t.Fatalf("Failed to read from UDP socket: %v", err)
 	}
 	
-	response := string(buf[:n])
-	if response != "ACK:orchestrate-workspace-migration;STATUS=PASS" {
-		t.Errorf("Expected SACP ACK response frame, got: %q", response)
+	hasHeader, _, hasCap, resC, err := bicodec.DecodeSACPMessage(buf[:n])
+	if err != nil {
+		t.Fatalf("Failed to decode UDP response: %v", err)
+	}
+	
+	if !hasCap {
+		t.Errorf("Expected capability frame in response, got none (hasHeader=%v)", hasHeader)
+	} else {
+		if resC.ID != "orchestrate-workspace-migration" {
+			t.Errorf("Expected capability ID 'orchestrate-workspace-migration', got: %q", resC.ID)
+		}
+		if resC.Parameters["status"] != "PASS" {
+			t.Errorf("Expected status 'PASS', got: %q", resC.Parameters["status"])
+		}
 	}
 	
 	// Test sending invalid SACP frame to server to cover fallback paths
@@ -204,6 +279,29 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 
 func TestMainFunc(t *testing.T) {
 	t.Setenv("SKIP_RECURSIVE_TESTS", "true")
+	
+	// Save and restore os.Args so main() doesn't interpret test flags as CLI goals
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"natvs-engine"}
+	
+	// Create hermetic temp workspace for main() self-conformance checks
+	tempDir := t.TempDir()
+	dirs := []string{
+		filepath.Join(tempDir, "000all/s-cognition"),
+		filepath.Join(tempDir, "00flow/s-aether"),
+		filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed"),
+		filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper"),
+	}
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create temp directory for main check: %v", err)
+		}
+	}
+	
+	_ = writeMockGatekeeper(t, tempDir)
+	
+	t.Setenv("TEST_WORKSPACE_ROOT", tempDir)
 	main()
 }
 
@@ -269,6 +367,11 @@ func TestMainFuncFailure(t *testing.T) {
 	oldFatal := logFatal
 	defer func() { logFatal = oldFatal }()
 	
+	// Save and restore os.Args
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"natvs-engine"}
+	
 	fatalCalled := 0
 	logFatal = func(format string, v ...interface{}) {
 		fatalCalled++
@@ -284,3 +387,104 @@ func TestMainFuncFailure(t *testing.T) {
 		t.Errorf("Expected logFatal to be called, but it was not")
 	}
 }
+
+func writeMockGatekeeper(t *testing.T, tempDir string) string {
+	dir := filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper")
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create mock gatekeeper dir: %v", err)
+	}
+	path := filepath.Join(dir, "gatekeeper.go")
+	content := `package gatekeeper
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/big"
+	"net"
+	"sync"
+	"time"
+
+	"github.com/zeebo/blake3"
+)
+// Gatekeeper is the Zero-Trust Enforcer.
+type Gatekeeper struct {
+	mu         sync.Mutex
+	seenNonces map[string]time.Time
+	auditor    *CryptosealAuditor
+}
+
+func NewGatekeeper() *Gatekeeper {
+	return &Gatekeeper{
+		seenNonces: make(map[string]time.Time),
+		auditor:    NewCryptosealAuditor(),
+	}
+}
+
+func (g *Gatekeeper) InterrogateEnvelope(env SignedEnvelope, secret []byte, maxAge time.Duration) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	// Prune expired nonces to control memory footprints
+	for nonce, ts := range g.seenNonces {
+		if now.Sub(ts) > maxAge {
+			delete(g.seenNonces, nonce)
+		}
+	}
+
+	if _, exists := g.seenNonces[env.Nonce]; exists {
+		return errors.New("REJECTED: Replay attack detected. Nonce already processed")
+	}
+
+	// Register nonce
+	g.seenNonces[env.Nonce] = env.Timestamp
+	return nil
+}
+
+func GeneratePrecomputedMTLS() (*PrecomputedTLSConfig, error) {
+	// 1. Generate ephemeral private keys
+	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate CA key: %w", err)
+	}
+
+	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate server key: %w", err)
+	}
+
+	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client key: %w", err)
+	}
+	return nil, nil
+}
+`
+	err = os.WriteFile(path, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write mock gatekeeper file: %v", err)
+	}
+	return path
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
+}
+

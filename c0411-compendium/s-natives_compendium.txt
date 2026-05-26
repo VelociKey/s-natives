@@ -1,3 +1,191 @@
+--- START OF FILE: AGENTS.md ---
+# Workspace: s-natives
+
+This workspace follows the 8xxxx Semantic Taxonomy defined in s-seed/00200-Workspace-Taxonomy/taxonomy.txt.
+
+## Engine Usage
+
+The NATVS Engine is a sovereign orchestrator that manages the fleet-aware execution lifecycle.
+
+### Antigravity Agent Manager
+- **Discovery:** The Agent Manager automatically discovers the engine via the global `AGENTS.md` registry.
+- **Integration:** Utilizes SACP (Sovereign Agent Control Protocol) over UDP for telemetry and command dispatch.
+- **Daemon Mode:** The engine can run as a background daemon listening for fleet instructions on UDP port `50989`.
+
+### Gemini CLI
+- **Delegation:** Tasks are delegated to the engine using simple positional shell arguments.
+- **Pattern:** `natvs-engine.exe "<objective>" "<context_path>"`
+- **Protocol:** Gemini CLI monitors the engine's output for progress updates and uses the `ask_user` tool for manual approval during critical NATVS phase transitions (e.g., Synthesis).
+
+## Adding New Agents
+
+To register a new agent within the fleet so it is recognized by both platforms:
+
+### 1. Register in Global AGENTS.md
+Add a new `### Agent Name` section to `C:\aCogSpaceSeed\AGENTS.md`. Include its Role, Responsibility, and Interface. This is the primary source of truth for both Antigravity and Gemini CLI.
+
+### 2. Configure Gemini CLI Subagent (Optional)
+If the agent requires specialized tool handling beyond simple shell commands:
+- Create a markdown file in `.gemini/agents/<agent-name>.md`.
+- Define its tools (e.g., `run_shell_command`, `read_file`) and system prompt in the YAML frontmatter.
+
+### 3. Verify Discovery
+- **Antigravity:** Open the **Agent Manager** panel; the agent should appear automatically if documented in `AGENTS.md`.
+- **Gemini CLI:** Run `/agents reload` followed by `/agents list` to confirm the agent is available for delegation.
+
+---
+
+## 🛠️ Verification & Conformance Testing
+
+To maintain the architectural integrity of the NATVS Engine and SACP transport layers, the following testing suites must be executed and remain green:
+
+### 1. Engine Main & Daemon Tests
+Validates the internal phases of the NATVS engine (Negotiation, Assimilation, Transformation, Verification, Synthesis) and the background telemetry daemon:
+```powershell
+# From the workspace root (C:\aCogSpaceSeed):
+& "C:\aCogSpaceSeed\00flow\s-forge\92000-external-toolchains\go\bin\go.exe" test -v sov.fleet/s-natives/...
+```
+
+### 2. SACP Broker Watchdog & Stream-Swap Conformance
+Validates the pooled warm-worker stream-swap protocol and the watchdog reset-on-task idle shutdown invariants:
+* **`TestIdleShutdownWatchdog`**: Verifies that the broker watchdog timer shuts down after inactivity but correctly delays and resets upon metabolic goal arrival.
+* **`TestStreamSwapLifecycle`**: Verifies the dynamic allocation and cleanup of parallel invocation streams while keeping the control stream hot.
+```powershell
+# From the workspace root (C:\aCogSpaceSeed):
+& "C:\aCogSpaceSeed\00flow\s-forge\92000-external-toolchains\go\bin\go.exe" test -v sov.fleet/s-hydration/100-synthesis-engine/...
+```
+
+### 3. SACP Go-Native Command Twins A/B Benchmarks
+Measures the performance improvements of Go-native command polyfills (`pkg/bash` in `s-fab-aides`) compared to spawning external host shell processes (PowerShell):
+```powershell
+# From the workspace root (C:\aCogSpaceSeed):
+& "C:\aCogSpaceSeed\00flow\s-forge\92000-external-toolchains\go\bin\go.exe" test -v -run "TestABPerformanceComparison" sov.fleet/s-fab-aides/81000-active-source/pkg/bash/...
+```
+* **Performance Baseline:** Bypasses process startup allocation delays entirely, demonstrating a **>3,400x speedup** (microsecond vs. millisecond scale) for file scans and pattern matching.
+
+
+
+--- END OF FILE: AGENTS.md ---
+
+--- START OF FILE: cover ---
+mode: set
+
+--- END OF FILE: cover ---
+
+--- START OF FILE: coverage.out ---
+mode: set
+sov.fleet/s-natives/natvs_engine.go:43.52,52.2 1 1
+sov.fleet/s-natives/natvs_engine.go:55.84,63.2 5 1
+sov.fleet/s-natives/natvs_engine.go:66.87,73.16 5 1
+sov.fleet/s-natives/natvs_engine.go:73.16,74.25 1 1
+sov.fleet/s-natives/natvs_engine.go:74.25,76.4 1 1
+sov.fleet/s-natives/natvs_engine.go:77.3,77.13 1 0
+sov.fleet/s-natives/natvs_engine.go:80.2,81.28 2 1
+sov.fleet/s-natives/natvs_engine.go:81.28,82.20 1 1
+sov.fleet/s-natives/natvs_engine.go:82.20,85.94 2 1
+sov.fleet/s-natives/natvs_engine.go:85.94,87.5 1 1
+sov.fleet/s-natives/natvs_engine.go:91.2,92.12 2 1
+sov.fleet/s-natives/natvs_engine.go:96.75,100.42 3 1
+sov.fleet/s-natives/natvs_engine.go:100.42,125.37 4 1
+sov.fleet/s-natives/natvs_engine.go:125.37,127.89 2 1
+sov.fleet/s-natives/natvs_engine.go:127.89,128.19 1 1
+sov.fleet/s-natives/natvs_engine.go:128.19,130.6 1 1
+sov.fleet/s-natives/natvs_engine.go:131.5,131.21 1 1
+sov.fleet/s-natives/natvs_engine.go:131.21,134.124 3 1
+sov.fleet/s-natives/natvs_engine.go:134.124,137.7 2 1
+sov.fleet/s-natives/natvs_engine.go:138.6,138.16 1 1
+sov.fleet/s-natives/natvs_engine.go:140.5,141.128 2 1
+sov.fleet/s-natives/natvs_engine.go:141.128,143.6 1 1
+sov.fleet/s-natives/natvs_engine.go:145.5,146.19 2 1
+sov.fleet/s-natives/natvs_engine.go:146.19,148.6 1 0
+sov.fleet/s-natives/natvs_engine.go:149.5,152.46 3 1
+sov.fleet/s-natives/natvs_engine.go:152.46,153.46 1 1
+sov.fleet/s-natives/natvs_engine.go:153.46,156.7 2 1
+sov.fleet/s-natives/natvs_engine.go:159.5,159.16 1 1
+sov.fleet/s-natives/natvs_engine.go:159.16,163.6 3 1
+sov.fleet/s-natives/natvs_engine.go:164.5,164.15 1 1
+sov.fleet/s-natives/natvs_engine.go:166.4,166.18 1 1
+sov.fleet/s-natives/natvs_engine.go:166.18,168.5 1 0
+sov.fleet/s-natives/natvs_engine.go:170.3,171.13 2 1
+sov.fleet/s-natives/natvs_engine.go:175.2,177.12 3 1
+sov.fleet/s-natives/natvs_engine.go:181.83,187.44 4 1
+sov.fleet/s-natives/natvs_engine.go:187.44,188.50 1 1
+sov.fleet/s-natives/natvs_engine.go:188.50,191.4 2 1
+sov.fleet/s-natives/natvs_engine.go:192.3,203.33 3 1
+sov.fleet/s-natives/natvs_engine.go:203.33,211.18 6 1
+sov.fleet/s-natives/natvs_engine.go:211.18,212.29 1 1
+sov.fleet/s-natives/natvs_engine.go:212.29,213.20 1 1
+sov.fleet/s-natives/natvs_engine.go:213.20,214.50 1 1
+sov.fleet/s-natives/natvs_engine.go:214.50,216.8 1 1
+sov.fleet/s-natives/natvs_engine.go:217.12,219.46 2 1
+sov.fleet/s-natives/natvs_engine.go:219.46,221.108 2 1
+sov.fleet/s-natives/natvs_engine.go:221.108,222.23 1 1
+sov.fleet/s-natives/natvs_engine.go:222.23,224.10 1 0
+sov.fleet/s-natives/natvs_engine.go:225.9,225.25 1 1
+sov.fleet/s-natives/natvs_engine.go:225.25,227.52 2 1
+sov.fleet/s-natives/natvs_engine.go:227.52,229.11 1 0
+sov.fleet/s-natives/natvs_engine.go:230.10,230.20 1 1
+sov.fleet/s-natives/natvs_engine.go:232.9,232.55 1 1
+sov.fleet/s-natives/natvs_engine.go:232.55,235.10 2 0
+sov.fleet/s-natives/natvs_engine.go:236.9,236.19 1 1
+sov.fleet/s-natives/natvs_engine.go:238.8,238.23 1 1
+sov.fleet/s-natives/natvs_engine.go:238.23,240.9 1 0
+sov.fleet/s-natives/natvs_engine.go:246.4,246.20 1 1
+sov.fleet/s-natives/natvs_engine.go:246.20,248.5 1 1
+sov.fleet/s-natives/natvs_engine.go:250.4,250.28 1 1
+sov.fleet/s-natives/natvs_engine.go:250.28,252.13 2 1
+sov.fleet/s-natives/natvs_engine.go:255.4,263.21 8 1
+sov.fleet/s-natives/natvs_engine.go:263.21,266.5 2 1
+sov.fleet/s-natives/natvs_engine.go:266.10,268.5 1 0
+sov.fleet/s-natives/natvs_engine.go:271.3,271.32 1 1
+sov.fleet/s-natives/natvs_engine.go:271.32,273.4 1 1
+sov.fleet/s-natives/natvs_engine.go:275.3,276.13 2 1
+sov.fleet/s-natives/natvs_engine.go:280.2,282.12 3 1
+sov.fleet/s-natives/natvs_engine.go:286.81,294.2 5 1
+sov.fleet/s-natives/natvs_engine.go:297.70,300.16 3 1
+sov.fleet/s-natives/natvs_engine.go:300.16,302.3 1 1
+sov.fleet/s-natives/natvs_engine.go:303.2,308.12 4 1
+sov.fleet/s-natives/natvs_engine.go:308.12,311.3 2 1
+sov.fleet/s-natives/natvs_engine.go:313.2,313.6 1 1
+sov.fleet/s-natives/natvs_engine.go:313.6,315.17 2 1
+sov.fleet/s-natives/natvs_engine.go:315.17,316.37 1 1
+sov.fleet/s-natives/natvs_engine.go:316.37,318.5 1 1
+sov.fleet/s-natives/natvs_engine.go:319.4,320.12 2 0
+sov.fleet/s-natives/natvs_engine.go:323.3,327.38 3 1
+sov.fleet/s-natives/natvs_engine.go:327.38,335.18 6 1
+sov.fleet/s-natives/natvs_engine.go:335.18,337.5 1 0
+sov.fleet/s-natives/natvs_engine.go:344.13,350.64 5 1
+sov.fleet/s-natives/natvs_engine.go:350.64,352.3 1 1
+sov.fleet/s-natives/natvs_engine.go:353.2,358.16 4 1
+sov.fleet/s-natives/natvs_engine.go:358.16,360.3 1 0
+sov.fleet/s-natives/natvs_engine.go:362.2,363.16 2 1
+sov.fleet/s-natives/natvs_engine.go:363.16,365.3 1 1
+sov.fleet/s-natives/natvs_engine.go:367.2,368.16 2 1
+sov.fleet/s-natives/natvs_engine.go:368.16,370.3 1 0
+sov.fleet/s-natives/natvs_engine.go:372.2,373.16 2 1
+sov.fleet/s-natives/natvs_engine.go:373.16,375.3 1 0
+sov.fleet/s-natives/natvs_engine.go:377.2,378.16 2 1
+sov.fleet/s-natives/natvs_engine.go:378.16,380.3 1 0
+sov.fleet/s-natives/natvs_engine.go:382.2,382.75 1 1
+
+--- END OF FILE: coverage.out ---
+
+--- START OF FILE: go.mod ---
+module sov.fleet/s-natives
+
+go 1.24
+
+require github.com/quic-go/quic-go v0.59.1
+
+require (
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+)
+
+--- END OF FILE: go.mod ---
+
+--- START OF FILE: natvs_engine.go ---
 package main
 
 import (
@@ -3233,3 +3421,873 @@ func main() {
 	
 	log.Println("[s-natives Engine] Self-conformance successfully verified!")
 }
+
+--- END OF FILE: natvs_engine.go ---
+
+--- START OF FILE: natvs_engine_test.go ---
+package main
+
+import (
+	"context"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
+)
+
+func TestNATVSComprehensive(t *testing.T) {
+	// Create hermetic temp workspace
+	tempDir := t.TempDir()
+	
+	// Create required directories
+	dirs := []string{
+		filepath.Join(tempDir, "000all/s-cognition"),
+		filepath.Join(tempDir, "00flow/s-forge/90000-authority"),
+		filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed"),
+		filepath.Join(tempDir, "00flow/s-forge/80200-rehydration-seed"),
+	}
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create temp directory: %v", err)
+		}
+	}
+
+	workspaces := []string{
+		"s-aether",
+		"s-actors",
+		"s-forge",
+		"s-latentlingua",
+		"s-natives",
+		"s-seed",
+		"s-mcp",
+		"s-adk",
+		"s-a2a",
+	}
+	for _, ws := range workspaces {
+		wsDir := filepath.Join(tempDir, "00flow", ws)
+		err := os.MkdirAll(wsDir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create workspace directory %s: %v", ws, err)
+		}
+		// Write dummy go.mod
+		err = os.WriteFile(filepath.Join(wsDir, "go.mod"), []byte("module sov.fleet/"+ws+"\ngo 1.26.3\n"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write dummy go.mod for %s: %v", ws, err)
+		}
+	}
+
+	// Copy conformance.exe to tempDir/00flow/s-seed/conformance.exe
+	srcConf := "C:\\aCogSpaceSeed\\00flow\\s-seed\\conformance.exe"
+	destConf := filepath.Join(tempDir, "00flow/s-seed/conformance.exe")
+	errCopy := copyFile(srcConf, destConf)
+	if errCopy != nil {
+		t.Fatalf("Failed to copy conformance.exe: %v", errCopy)
+	}
+	
+	gkFile := writeMockGatekeeper(t, tempDir)
+	
+	// Write dummy files for casing refactoring tests
+	dummyGoFile := filepath.Join(tempDir, "00flow/s-forge/80200-rehydration-seed/test.go")
+	err := os.WriteFile(dummyGoFile, []byte("package main\nimport \"s" + "Seed\"\n// s" + "Forge and s" + "Natives"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write dummy Go file: %v", err)
+	}
+	
+	dummyIgnoredFile := filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed/ignored.txt")
+	err = os.WriteFile(dummyIgnoredFile, []byte("s" + "Seed and s" + "Forge"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write dummy ignored file: %v", err)
+	}
+	
+	dummyMDFile := filepath.Join(tempDir, "000all/s-cognition/test.md")
+	err = os.WriteFile(dummyMDFile, []byte("# s" + "Natives and s" + "Aether"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write dummy MD file: %v", err)
+	}
+	
+	engine := NewNATVSEngine(tempDir)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	// 1. Negotiation Phase
+	err = engine.Negotiate(ctx, "00flow/s-mcp")
+	if err != nil {
+		t.Fatalf("Negotiation phase failed: %v", err)
+	}
+	if engine.State != PhaseNegotiate {
+		t.Errorf("Expected state %s, got %s", PhaseNegotiate, engine.State)
+	}
+	
+	// 2. Assimilation Phase
+	// (a) Valid workspace
+	err = engine.Assimilation(ctx, "00flow/s-forge")
+	if err != nil {
+		t.Fatalf("Assimilation phase failed: %v", err)
+	}
+	if engine.State != PhaseAssimilation {
+		t.Errorf("Expected state %s, got %s", PhaseAssimilation, engine.State)
+	}
+	// (b) Non-existent workspace (error check)
+	err = engine.Assimilation(ctx, "00flow/nonexistent")
+	if err == nil {
+		t.Errorf("Expected assimilation failure for non-existent workspace")
+	}
+	
+	// 3. Transformation Phase (Refactoring)
+	err = engine.Transform(ctx, "refactor-taxonomy-casing")
+	if err != nil {
+		t.Fatalf("Transformation refactoring failed: %v", err)
+	}
+	
+	// Verify that conformed Go file was refactored
+	conformedContent, err := os.ReadFile(dummyGoFile)
+	if err != nil {
+		t.Fatalf("Failed to read conformed file: %v", err)
+	}
+	strContent := string(conformedContent)
+	if strings.Contains(strContent, "s" + "Seed") || strings.Contains(strContent, "s" + "Forge") || strings.Contains(strContent, "s" + "Natives") {
+		t.Errorf("Conformed Go file was not refactored correctly: %q", strContent)
+	}
+	
+	// Verify that conformed MD file was refactored
+	conformedMDContent, err := os.ReadFile(dummyMDFile)
+	if err != nil {
+		t.Fatalf("Failed to read conformed MD file: %v", err)
+	}
+	strMD := string(conformedMDContent)
+	if strings.Contains(strMD, "s" + "Natives") || strings.Contains(strMD, "s" + "Aether") {
+		t.Errorf("Conformed MD file was not refactored correctly: %q", strMD)
+	}
+	
+	// Verify that ignored file in 9xxxx directory was NOT modified
+	ignoredContent, err := os.ReadFile(dummyIgnoredFile)
+	if err != nil {
+		t.Fatalf("Failed to read ignored file: %v", err)
+	}
+	strIgnored := string(ignoredContent)
+	if !strings.Contains(strIgnored, "s" + "Seed") {
+		t.Errorf("Ignored 9xxxx file was modified: %q", strIgnored)
+	}
+	
+	// Verify that optimize-s-mcp refactoring works
+	err = engine.Transform(ctx, "optimize-s-mcp")
+	if err != nil {
+		t.Fatalf("Transformation optimize-s-mcp failed: %v", err)
+	}
+
+	optContent, err := os.ReadFile(gkFile)
+	if err != nil {
+		t.Fatalf("Failed to read conformed gatekeeper: %v", err)
+	}
+	optStr := string(optContent)
+	if !strings.Contains(optStr, "ecdsa.GenerateKey") {
+		t.Error("Expected conformed gatekeeper to contain ECDSA key generation")
+	}
+	if !strings.Contains(optStr, "nonceQueue []nonceEntry") {
+		t.Error("Expected conformed gatekeeper to track nonceQueue")
+	}
+
+	// Check coverage of Transformation's unrecognized action fallback
+	err = engine.Transform(ctx, "unknown-action")
+	if err != nil {
+		t.Fatalf("Transformation fallback failed: %v", err)
+	}
+	
+	// 4. Verification Phase
+	// All workspaces package walk (no test files case)
+	err = engine.Verification(ctx, "all-00flow-workspaces")
+	if err != nil {
+		t.Fatalf("Verification phase all workspaces failed: %v", err)
+	}
+	
+	// 5. Synthesis Phase
+	err = engine.Synthesis(ctx, "aether_wasm_gc.wasm")
+	if err != nil {
+		t.Fatalf("Synthesis phase failed: %v", err)
+	}
+	if engine.State != PhaseSynthesis {
+		t.Errorf("Expected state %s, got %s", PhaseSynthesis, engine.State)
+	}
+}
+
+func TestNATVSListenDaemonAndSACP(t *testing.T) {
+	engine := NewNATVSEngine("C:\\aCogSpaceSeed")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	port := 51989
+	
+	// Start UDP server daemon
+	go func() {
+		_ = engine.RunDaemon(ctx, port)
+	}()
+	
+	// Allow UDP socket start
+	time.Sleep(100 * time.Millisecond)
+	
+	// Dial UDP client port
+	raddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:51989")
+	if err != nil {
+		t.Fatalf("Failed to resolve RAddr: %v", err)
+	}
+	
+	conn, err := net.DialUDP("udp", nil, raddr)
+	if err != nil {
+		t.Fatalf("Failed to dial UDP server: %v", err)
+	}
+	defer conn.Close()
+	
+	// Dispatch SACP command frame (constructed via bicodec)
+	h := bicodec.SACPHeader{
+		UUID:              "test-client-uuid",
+		OriginalAuthority: bicodec.AuthSovereign,
+		CurrentAuthority:  bicodec.AuthSovereign,
+	}
+	c := bicodec.SACPCapability{
+		Domain: "tool",
+		Action: "call",
+		ID:     "orchestrate-workspace-migration",
+		Parameters: map[string]string{
+			"target": "s-aether",
+		},
+	}
+	msgBytes, err := bicodec.EncodeSACPMessage(&h, &c)
+	if err != nil {
+		t.Fatalf("Failed to encode SACP message: %v", err)
+	}
+	
+	_, err = conn.Write(msgBytes)
+	if err != nil {
+		t.Fatalf("Failed to write to UDP socket: %v", err)
+	}
+	
+	// Read Response SACP frame
+	buf := make([]byte, 1024)
+	err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+	if err != nil {
+		t.Fatalf("Failed to set read deadline: %v", err)
+	}
+	
+	n, err := conn.Read(buf)
+	if err != nil {
+		t.Fatalf("Failed to read from UDP socket: %v", err)
+	}
+	
+	hasHeader, _, hasCap, resC, err := bicodec.DecodeSACPMessage(buf[:n])
+	if err != nil {
+		t.Fatalf("Failed to decode UDP response: %v", err)
+	}
+	
+	if !hasCap {
+		t.Errorf("Expected capability frame in response, got none (hasHeader=%v)", hasHeader)
+	} else {
+		if resC.ID != "orchestrate-workspace-migration" {
+			t.Errorf("Expected capability ID 'orchestrate-workspace-migration', got: %q", resC.ID)
+		}
+		if resC.Parameters["status"] != "PASS" {
+			t.Errorf("Expected status 'PASS', got: %q", resC.Parameters["status"])
+		}
+	}
+	
+	// Test sending invalid SACP frame to server to cover fallback paths
+	_, _ = conn.Write([]byte("INVALID_FRAME"))
+	time.Sleep(50 * time.Millisecond)
+	
+	// Cancel context to shut down RunDaemon cleanly
+	cancel()
+	time.Sleep(50 * time.Millisecond)
+}
+
+func TestMainFunc(t *testing.T) {
+	t.Setenv("SKIP_RECURSIVE_TESTS", "true")
+	
+	// Save and restore os.Args so main() doesn't interpret test flags as CLI goals
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"natvs-engine"}
+	
+	// Create hermetic temp workspace for main() self-conformance checks
+	tempDir := t.TempDir()
+	dirs := []string{
+		filepath.Join(tempDir, "000all/s-cognition"),
+		filepath.Join(tempDir, "00flow/s-aether"),
+		filepath.Join(tempDir, "00flow/s-forge/90100-rehydration-seed"),
+		filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper"),
+	}
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create temp directory for main check: %v", err)
+		}
+	}
+	
+	_ = writeMockGatekeeper(t, tempDir)
+	
+	t.Setenv("TEST_WORKSPACE_ROOT", tempDir)
+	main()
+}
+
+func TestNATVSVerificationFailure(t *testing.T) {
+	tempDir := t.TempDir()
+	
+	// Create required directories
+	dirs := []string{
+		filepath.Join(tempDir, "00flow/s-aether"),
+	}
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create temp directory: %v", err)
+		}
+	}
+	
+	// Create a dummy test file in s-aether to make it look like it has tests
+	dummyTestGoFile := filepath.Join(tempDir, "00flow/s-aether/dummy_test.go")
+	err := os.WriteFile(dummyTestGoFile, []byte("package main\n"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write dummy test file: %v", err)
+	}
+	
+	engine := NewNATVSEngine(tempDir)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	// Ensure SKIP_RECURSIVE_TESTS is NOT set
+	t.Setenv("SKIP_RECURSIVE_TESTS", "")
+	
+	err = engine.Verification(ctx, "all-00flow-workspaces")
+	if err == nil {
+		t.Errorf("Expected Verification to fail because of missing/invalid goBin, but it passed")
+	}
+}
+
+func TestNATVSDaemonListenFailure(t *testing.T) {
+	engine := NewNATVSEngine(t.TempDir())
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	
+	// Bind to the port first
+	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:51999")
+	if err != nil {
+		t.Fatalf("Failed to resolve: %v", err)
+	}
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		t.Fatalf("Failed to listen: %v", err)
+	}
+	defer conn.Close()
+	
+	// Try to run RunDaemon on the same port, which must fail!
+	err = engine.RunDaemon(ctx, 51999)
+	if err == nil {
+		t.Errorf("Expected RunDaemon to fail when port is already in use, but it passed")
+	}
+}
+
+func TestMainFuncFailure(t *testing.T) {
+	// Mock logFatal
+	oldFatal := logFatal
+	defer func() { logFatal = oldFatal }()
+	
+	// Save and restore os.Args
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"natvs-engine"}
+	
+	fatalCalled := 0
+	logFatal = func(format string, v ...interface{}) {
+		fatalCalled++
+	}
+	
+	// Force failure by running with invalid workspace root
+	t.Setenv("TEST_WORKSPACE_ROOT", "/nonexistent_root_dir_abc")
+	t.Setenv("SKIP_RECURSIVE_TESTS", "true")
+	
+	main()
+	
+	if fatalCalled == 0 {
+		t.Errorf("Expected logFatal to be called, but it was not")
+	}
+}
+
+func writeMockGatekeeper(t *testing.T, tempDir string) string {
+	dir := filepath.Join(tempDir, "00flow/s-mcp/00200-logic-libraries/gatekeeper")
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create mock gatekeeper dir: %v", err)
+	}
+	path := filepath.Join(dir, "gatekeeper.go")
+	content := `package gatekeeper
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/big"
+	"net"
+	"sync"
+	"time"
+
+	"github.com/zeebo/blake3"
+)
+// Gatekeeper is the Zero-Trust Enforcer.
+type Gatekeeper struct {
+	mu         sync.Mutex
+	seenNonces map[string]time.Time
+	auditor    *CryptosealAuditor
+}
+
+func NewGatekeeper() *Gatekeeper {
+	return &Gatekeeper{
+		seenNonces: make(map[string]time.Time),
+		auditor:    NewCryptosealAuditor(),
+	}
+}
+
+func (g *Gatekeeper) InterrogateEnvelope(env SignedEnvelope, secret []byte, maxAge time.Duration) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	// Prune expired nonces to control memory footprints
+	for nonce, ts := range g.seenNonces {
+		if now.Sub(ts) > maxAge {
+			delete(g.seenNonces, nonce)
+		}
+	}
+
+	if _, exists := g.seenNonces[env.Nonce]; exists {
+		return errors.New("REJECTED: Replay attack detected. Nonce already processed")
+	}
+
+	// Register nonce
+	g.seenNonces[env.Nonce] = env.Timestamp
+	return nil
+}
+
+func GeneratePrecomputedMTLS() (*PrecomputedTLSConfig, error) {
+	// 1. Generate ephemeral private keys
+	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate CA key: %w", err)
+	}
+
+	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate server key: %w", err)
+	}
+
+	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client key: %w", err)
+	}
+	return nil, nil
+}
+`
+	err = os.WriteFile(path, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write mock gatekeeper file: %v", err)
+	}
+	return path
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
+}
+
+
+--- END OF FILE: natvs_engine_test.go ---
+
+--- START OF FILE: s-natives.swdt.webnf ---
+# s-natives Workspace DNA (swdt)
+workspace_name = "s-natives"
+
+last_assessment = "2026-05-23T04:43:28Z"
+
+--- END OF FILE: s-natives.swdt.webnf ---
+
+--- START OF FILE: workspace.harness ---
+workspace: natives
+
+go_build {
+    type: NATIVE
+    src: "."
+    out: "natvs-engine.exe"
+}
+
+--- END OF FILE: workspace.harness ---
+
+--- START OF FILE: 00000-knowledge-foundations/.gitkeep ---
+--- END OF FILE: 00000-knowledge-foundations/.gitkeep ---
+
+--- START OF FILE: 00200-logic-libraries/.gitkeep ---
+--- END OF FILE: 00200-logic-libraries/.gitkeep ---
+
+--- START OF FILE: 00200-workspace-taxonomy/.gitkeep ---
+--- END OF FILE: 00200-workspace-taxonomy/.gitkeep ---
+
+--- START OF FILE: 00300-protocols/.gitkeep ---
+--- END OF FILE: 00300-protocols/.gitkeep ---
+
+--- START OF FILE: 01000-identity-foundations/.gitkeep ---
+--- END OF FILE: 01000-identity-foundations/.gitkeep ---
+
+--- START OF FILE: 03000-pulse-progress/.gitkeep ---
+--- END OF FILE: 03000-pulse-progress/.gitkeep ---
+
+--- START OF FILE: 04000-daily-chronicles/.gitkeep ---
+--- END OF FILE: 04000-daily-chronicles/.gitkeep ---
+
+--- START OF FILE: 08000-attestation-snapshot/.gitkeep ---
+--- END OF FILE: 08000-attestation-snapshot/.gitkeep ---
+
+--- START OF FILE: 08000-attestation-snapshot/code_topology.webnf ---
+# Go Code Topology Report (weBNF)
+[code-topology "s-natives"] {
+    module = "sov.fleet/s-natives" ;
+    timestamp = "2026-05-23T04:43:28Z" ;
+    target_dir = "C:/aCogSpaceSeed/00flow/s-natives" ;
+
+    packages = [
+        "main"
+    ] ;
+
+    internal_imports = [
+        "sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
+    ] ;
+
+    external_imports = [
+    ] ;
+
+    structs = [
+        "name: OrchestrationConfig | file: natvs_engine.go | fields: 4 | methods: ",
+        "name: NATVSEngine | file: natvs_engine.go | fields: 2 | methods: Negotiate,Assimilation,Transform,runConformanceCheck,Verification,Synthesis,RunDaemon"
+    ] ;
+
+    functions = [
+        "name: NewNATVSEngine | file: natvs_engine.go | package: main",
+        "name: TestNATVSComprehensive | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSListenDaemonAndSACP | file: natvs_engine_test.go | package: main",
+        "name: TestMainFunc | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSVerificationFailure | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSDaemonListenFailure | file: natvs_engine_test.go | package: main",
+        "name: TestMainFuncFailure | file: natvs_engine_test.go | package: main"
+    ] ;
+}
+
+--- END OF FILE: 08000-attestation-snapshot/code_topology.webnf ---
+
+--- START OF FILE: 09000-agent-narrative-ledger/.gitkeep ---
+--- END OF FILE: 09000-agent-narrative-ledger/.gitkeep ---
+
+--- START OF FILE: 10000-autonomous-actors/.gitkeep ---
+--- END OF FILE: 10000-autonomous-actors/.gitkeep ---
+
+--- START OF FILE: 11000-high-level-intent/.gitkeep ---
+--- END OF FILE: 11000-high-level-intent/.gitkeep ---
+
+--- START OF FILE: 12000-system-architecture/.gitkeep ---
+--- END OF FILE: 12000-system-architecture/.gitkeep ---
+
+--- START OF FILE: 13000-pattern-definitions/.gitkeep ---
+--- END OF FILE: 13000-pattern-definitions/.gitkeep ---
+
+--- START OF FILE: 20000-context-bridges/.gitkeep ---
+--- END OF FILE: 20000-context-bridges/.gitkeep ---
+
+--- START OF FILE: 21000-presentation-contexts/.gitkeep ---
+--- END OF FILE: 21000-presentation-contexts/.gitkeep ---
+
+--- START OF FILE: 22000-edge-transports/.gitkeep ---
+--- END OF FILE: 22000-edge-transports/.gitkeep ---
+
+--- START OF FILE: 23000-edge-infrastructure/.gitkeep ---
+--- END OF FILE: 23000-edge-infrastructure/.gitkeep ---
+
+--- START OF FILE: 30000-federated-services/.gitkeep ---
+--- END OF FILE: 30000-federated-services/.gitkeep ---
+
+--- START OF FILE: 30100-meta-foundation/.gitkeep ---
+--- END OF FILE: 30100-meta-foundation/.gitkeep ---
+
+--- START OF FILE: 31000-core-implementations/.gitkeep ---
+--- END OF FILE: 31000-core-implementations/.gitkeep ---
+
+--- START OF FILE: 32000-shared-handshake/.gitkeep ---
+--- END OF FILE: 32000-shared-handshake/.gitkeep ---
+
+--- START OF FILE: 34000-dsl-programs/.gitkeep ---
+--- END OF FILE: 34000-dsl-programs/.gitkeep ---
+
+--- START OF FILE: 35000-access-rules/.gitkeep ---
+--- END OF FILE: 35000-access-rules/.gitkeep ---
+
+--- START OF FILE: 40000-communication-contracts/.gitkeep ---
+--- END OF FILE: 40000-communication-contracts/.gitkeep ---
+
+--- START OF FILE: 41000-topology-grammars/.gitkeep ---
+--- END OF FILE: 41000-topology-grammars/.gitkeep ---
+
+--- START OF FILE: 42000-interaction-grammars/.gitkeep ---
+--- END OF FILE: 42000-interaction-grammars/.gitkeep ---
+
+--- START OF FILE: 43000-grammar-transports/.gitkeep ---
+--- END OF FILE: 43000-grammar-transports/.gitkeep ---
+
+--- START OF FILE: 50000-intelligence-framework/.gitkeep ---
+--- END OF FILE: 50000-intelligence-framework/.gitkeep ---
+
+--- START OF FILE: 51000-intelligence-active-tools/.gitkeep ---
+--- END OF FILE: 51000-intelligence-active-tools/.gitkeep ---
+
+--- START OF FILE: 60000-information-storage/.gitkeep ---
+--- END OF FILE: 60000-information-storage/.gitkeep ---
+
+--- START OF FILE: 70000-environmental-harness/.gitkeep ---
+--- END OF FILE: 70000-environmental-harness/.gitkeep ---
+
+--- START OF FILE: 71000-build-harness/workspace.harness ---
+; Declarative Workspace Harness
+; Governed by hydrator.wag
+
+workspace_harness {
+    name : "s-natives" ;
+    targets {
+        target {
+            mode : DYNAMIC ;
+            engine : "go-compiler" ;
+            src : "s-natives" ;
+            out : "s-natives" ;
+            category : "ACTOR" ;
+        }
+    }
+    promote {
+        realm : PLATFORM ;
+        origin : INTERNAL ;
+        category : ACTOR ;
+    }
+}
+
+--- END OF FILE: 71000-build-harness/workspace.harness ---
+
+--- START OF FILE: 80000-genetic/.gitkeep ---
+--- END OF FILE: 80000-genetic/.gitkeep ---
+
+--- START OF FILE: 80000-system-governance/.gitkeep ---
+--- END OF FILE: 80000-system-governance/.gitkeep ---
+
+--- START OF FILE: 80100-foundational-intents/.gitkeep ---
+--- END OF FILE: 80100-foundational-intents/.gitkeep ---
+
+--- START OF FILE: 80200-rehydration-seed/.gitkeep ---
+--- END OF FILE: 80200-rehydration-seed/.gitkeep ---
+
+--- START OF FILE: 80210-rehydration-seed-links/.gitkeep ---
+--- END OF FILE: 80210-rehydration-seed-links/.gitkeep ---
+
+--- START OF FILE: 80300-system-attestations/.gitkeep ---
+--- END OF FILE: 80300-system-attestations/.gitkeep ---
+
+--- START OF FILE: 80400-cognitive-protocols/.gitkeep ---
+--- END OF FILE: 80400-cognitive-protocols/.gitkeep ---
+
+--- START OF FILE: 80500-integration-anchors/.gitkeep ---
+--- END OF FILE: 80500-integration-anchors/.gitkeep ---
+
+--- START OF FILE: 80600-agent-narrative-ledger/.gitkeep ---
+--- END OF FILE: 80600-agent-narrative-ledger/.gitkeep ---
+
+--- START OF FILE: 81000-active-source/.gitkeep ---
+--- END OF FILE: 81000-active-source/.gitkeep ---
+
+--- START OF FILE: 81100-external-toolchains/.gitkeep ---
+--- END OF FILE: 81100-external-toolchains/.gitkeep ---
+
+--- START OF FILE: 81200-external-adapters/.gitkeep ---
+--- END OF FILE: 81200-external-adapters/.gitkeep ---
+
+--- START OF FILE: 81210-execution-points/.gitkeep ---
+--- END OF FILE: 81210-execution-points/.gitkeep ---
+
+--- START OF FILE: 81300-external-archives/.gitkeep ---
+--- END OF FILE: 81300-external-archives/.gitkeep ---
+
+--- START OF FILE: 81400-external-libraries/.gitkeep ---
+--- END OF FILE: 81400-external-libraries/.gitkeep ---
+
+--- START OF FILE: 81500-external-agents/.gitkeep ---
+--- END OF FILE: 81500-external-agents/.gitkeep ---
+
+--- START OF FILE: 82000-internal-executables/.gitkeep ---
+--- END OF FILE: 82000-internal-executables/.gitkeep ---
+
+--- START OF FILE: 82100-internal-toolchains/.gitkeep ---
+--- END OF FILE: 82100-internal-toolchains/.gitkeep ---
+
+--- START OF FILE: 82200-internal-adapters/.gitkeep ---
+--- END OF FILE: 82200-internal-adapters/.gitkeep ---
+
+--- START OF FILE: 82300-internal-actors/.gitkeep ---
+--- END OF FILE: 82300-internal-actors/.gitkeep ---
+
+--- START OF FILE: 82400-internal-drivers/.gitkeep ---
+--- END OF FILE: 82400-internal-drivers/.gitkeep ---
+
+--- START OF FILE: 82500-internal-cognitive-assistance/.gitkeep ---
+--- END OF FILE: 82500-internal-cognitive-assistance/.gitkeep ---
+
+--- START OF FILE: 82600-platform-delivery/.gitkeep ---
+--- END OF FILE: 82600-platform-delivery/.gitkeep ---
+
+--- START OF FILE: 82700-internal-execution-contexts/.gitkeep ---
+--- END OF FILE: 82700-internal-execution-contexts/.gitkeep ---
+
+--- START OF FILE: 83000-agent-templates/.gitkeep ---
+--- END OF FILE: 83000-agent-templates/.gitkeep ---
+
+--- START OF FILE: 83000-templates/.gitkeep ---
+--- END OF FILE: 83000-templates/.gitkeep ---
+
+--- START OF FILE: 84000-product-plane/.gitkeep ---
+--- END OF FILE: 84000-product-plane/.gitkeep ---
+
+--- START OF FILE: 85000-customer-governance/.gitkeep ---
+--- END OF FILE: 85000-customer-governance/.gitkeep ---
+
+--- START OF FILE: 85000-mirrored-upstream/.gitkeep ---
+--- END OF FILE: 85000-mirrored-upstream/.gitkeep ---
+
+--- START OF FILE: 85000-standards/.gitkeep ---
+--- END OF FILE: 85000-standards/.gitkeep ---
+
+--- START OF FILE: 85100-solutions-catalog/.gitkeep ---
+--- END OF FILE: 85100-solutions-catalog/.gitkeep ---
+
+--- START OF FILE: 85200-workload-remediation/.gitkeep ---
+--- END OF FILE: 85200-workload-remediation/.gitkeep ---
+
+--- START OF FILE: 85300-customer-attestations/.gitkeep ---
+--- END OF FILE: 85300-customer-attestations/.gitkeep ---
+
+--- START OF FILE: 85400-customer-protocols/.gitkeep ---
+--- END OF FILE: 85400-customer-protocols/.gitkeep ---
+
+--- START OF FILE: 85500-customer-anchors/.gitkeep ---
+--- END OF FILE: 85500-customer-anchors/.gitkeep ---
+
+--- START OF FILE: 86000-customer-external-executables/.gitkeep ---
+--- END OF FILE: 86000-customer-external-executables/.gitkeep ---
+
+--- START OF FILE: 86000-external/.gitkeep ---
+--- END OF FILE: 86000-external/.gitkeep ---
+
+--- START OF FILE: 86100-customer-external-toolchains/.gitkeep ---
+--- END OF FILE: 86100-customer-external-toolchains/.gitkeep ---
+
+--- START OF FILE: 86200-customer-external-adapters/.gitkeep ---
+--- END OF FILE: 86200-customer-external-adapters/.gitkeep ---
+
+--- START OF FILE: 86300-customer-external-archives/.gitkeep ---
+--- END OF FILE: 86300-customer-external-archives/.gitkeep ---
+
+--- START OF FILE: 86400-customer-external-libraries/.gitkeep ---
+--- END OF FILE: 86400-customer-external-libraries/.gitkeep ---
+
+--- START OF FILE: 87000-customer-internal-executables/.gitkeep ---
+--- END OF FILE: 87000-customer-internal-executables/.gitkeep ---
+
+--- START OF FILE: 87000-internal/.gitkeep ---
+--- END OF FILE: 87000-internal/.gitkeep ---
+
+--- START OF FILE: 87100-customer-internal-toolchains/.gitkeep ---
+--- END OF FILE: 87100-customer-internal-toolchains/.gitkeep ---
+
+--- START OF FILE: 87200-customer-internal-adapters/.gitkeep ---
+--- END OF FILE: 87200-customer-internal-adapters/.gitkeep ---
+
+--- START OF FILE: 87300-customer-internal-actors/.gitkeep ---
+--- END OF FILE: 87300-customer-internal-actors/.gitkeep ---
+
+--- START OF FILE: 87400-customer-internal-libraries/.gitkeep ---
+--- END OF FILE: 87400-customer-internal-libraries/.gitkeep ---
+
+--- START OF FILE: 87500-customer-cognitive-assistance/.gitkeep ---
+--- END OF FILE: 87500-customer-cognitive-assistance/.gitkeep ---
+
+--- START OF FILE: 87600-customer-platform-delivery/.gitkeep ---
+--- END OF FILE: 87600-customer-platform-delivery/.gitkeep ---
+
+--- START OF FILE: 87700-customer-execution-contexts/.gitkeep ---
+--- END OF FILE: 87700-customer-execution-contexts/.gitkeep ---
+
+--- START OF FILE: 88000-customer-templates/.gitkeep ---
+--- END OF FILE: 88000-customer-templates/.gitkeep ---
+
+--- START OF FILE: 89000-archived-logic/.gitkeep ---
+--- END OF FILE: 89000-archived-logic/.gitkeep ---
+
+--- START OF FILE: 89000-customer-product-plane/.gitkeep ---
+--- END OF FILE: 89000-customer-product-plane/.gitkeep ---
+
+--- START OF FILE: 90000-authority/.gitkeep ---
+--- END OF FILE: 90000-authority/.gitkeep ---
+
+--- START OF FILE: 90000-enablement-labs/.gitkeep ---
+--- END OF FILE: 90000-enablement-labs/.gitkeep ---
+
+--- START OF FILE: 90100-rehydration-seed/.gitkeep ---
+--- END OF FILE: 90100-rehydration-seed/.gitkeep ---
+
+--- START OF FILE: 91000-ext-artifact-cognition-intelligence/.gitkeep ---
+--- END OF FILE: 91000-ext-artifact-cognition-intelligence/.gitkeep ---
+
+--- START OF FILE: 91200-external-adapters/.gitkeep ---
+--- END OF FILE: 91200-external-adapters/.gitkeep ---
+
+--- START OF FILE: 92000-external-toolchains/.gitkeep ---
+--- END OF FILE: 92000-external-toolchains/.gitkeep ---
+
+--- START OF FILE: 92000-grammar-visualizers/.gitkeep ---
+--- END OF FILE: 92000-grammar-visualizers/.gitkeep ---
+
+--- START OF FILE: 94000-internal-actors/.gitkeep ---
+--- END OF FILE: 94000-internal-actors/.gitkeep ---
+
+--- START OF FILE: 95000-projection/.gitkeep ---
+--- END OF FILE: 95000-projection/.gitkeep ---
+
+--- START OF FILE: 96000-int-artifact-cognition-intelligence/.gitkeep ---
+--- END OF FILE: 96000-int-artifact-cognition-intelligence/.gitkeep ---
+
+--- START OF FILE: 96200-internal-adapters/.gitkeep ---
+--- END OF FILE: 96200-internal-adapters/.gitkeep ---
+
+--- START OF FILE: 97000-internal-toolchains/.gitkeep ---
+--- END OF FILE: 97000-internal-toolchains/.gitkeep ---
+
+--- START OF FILE: 99000-internal-libraries/.gitkeep ---
+--- END OF FILE: 99000-internal-libraries/.gitkeep ---
+
+--- START OF FILE: 99900-metabolic-projection/.gitkeep ---
+--- END OF FILE: 99900-metabolic-projection/.gitkeep ---
+

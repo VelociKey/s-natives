@@ -1,0 +1,32 @@
+# Go Code Topology Report (weBNF)
+[code-topology "s-natives"] {
+    module = "sov.fleet/s-natives" ;
+    timestamp = "2026-05-23T04:43:28Z" ;
+    target_dir = "C:/aCogSpaceSeed/00flow/s-natives" ;
+
+    packages = [
+        "main"
+    ] ;
+
+    internal_imports = [
+        "sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
+    ] ;
+
+    external_imports = [
+    ] ;
+
+    structs = [
+        "name: OrchestrationConfig | file: natvs_engine.go | fields: 4 | methods: ",
+        "name: NATVSEngine | file: natvs_engine.go | fields: 2 | methods: Negotiate,Assimilation,Transform,runConformanceCheck,Verification,Synthesis,RunDaemon"
+    ] ;
+
+    functions = [
+        "name: NewNATVSEngine | file: natvs_engine.go | package: main",
+        "name: TestNATVSComprehensive | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSListenDaemonAndSACP | file: natvs_engine_test.go | package: main",
+        "name: TestMainFunc | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSVerificationFailure | file: natvs_engine_test.go | package: main",
+        "name: TestNATVSDaemonListenFailure | file: natvs_engine_test.go | package: main",
+        "name: TestMainFuncFailure | file: natvs_engine_test.go | package: main"
+    ] ;
+}
