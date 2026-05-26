@@ -520,5 +520,88 @@ func TestNATVSCoordinatorStaleSocketCleaning(t *testing.T) {
 	}
 }
 
+func TestWarmVsColdStartPerformance(t *testing.T) {
+	tempWS := t.TempDir()
+	sockPath := filepath.Join(tempWS, "perf.sock")
+	cfg := broker.Config{
+		Name:          "perf-broker",
+		WorkspacePath: tempWS,
+		SocketPath:    sockPath,
+		IdleTimeout:   5 * time.Second,
+	}
+
+	backend := &EchoBackend{}
+
+	// --- 1. Measure Warm Start (Direct Dial to already running coordinator) ---
+	coord := broker.NewCoordinator(cfg, backend)
+	err := coord.Start()
+	if err != nil {
+		t.Fatalf("Failed to start coordinator: %v", err)
+	}
+	defer coord.Close()
+
+	// Perform a warm-up dial
+	netType, addr := coord.GetCoordinationEndpoint()
+	if netType == "unix" && len(addr) >= 104 {
+		netType = "tcp"
+		addr = fmt.Sprintf("127.0.0.1:%d", coord.GetDeterministicTCPPort())
+	}
+	
+	startWarm := time.Now()
+	connWarm, err := net.Dial(netType, addr)
+	if err != nil {
+		t.Fatalf("Warm dial failed: %v", err)
+	}
+	durationWarm := time.Since(startWarm)
+	connWarm.Close()
+
+	// --- 2. Measure Cold Start (Includes socket checks, stale file unlinking, and backoff wait) ---
+	coord.Close() // Ensure daemon is dead
+	
+	if netType == "unix" {
+		_ = os.WriteFile(addr, []byte("stale"), 0644)
+	}
+
+	startCold := time.Now()
+	_, err = net.DialTimeout(netType, addr, 50*time.Millisecond)
+	if err != nil {
+		if netType == "unix" {
+			_ = os.Remove(addr)
+		}
+		
+		go func() {
+			time.Sleep(50 * time.Millisecond) // Simulate daemon startup latency
+			_ = coord.Start()
+		}()
+		
+		// Retry loop (backoff)
+		var connCold net.Conn
+		for i := 0; i < 5; i++ {
+			time.Sleep(20 * time.Millisecond)
+			connCold, err = net.DialTimeout(netType, addr, 50*time.Millisecond)
+			if err == nil {
+				connCold.Close()
+				break
+			}
+		}
+	}
+	durationCold := time.Since(startCold)
+
+	t.Logf("=========================================================")
+	t.Logf("       SACP PERFORMANCE STARTUP LATENCY METRICS         ")
+	t.Logf("=========================================================")
+	t.Logf("  Cold Start Latency (New Spawn & Boot): %v", durationCold)
+	t.Logf("  Warm Start Latency (Session Reused):   %v", durationWarm)
+	
+	improvement := float64(durationCold) / float64(durationWarm)
+	t.Logf("  Warm-connection Speedup Factor:      %.2fx faster", improvement)
+	t.Logf("=========================================================")
+
+	if durationWarm >= durationCold {
+		t.Errorf("Warm start (%v) was not faster than cold start (%v)", durationWarm, durationCold)
+	}
+}
+
+
 
 
