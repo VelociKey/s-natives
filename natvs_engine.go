@@ -39,6 +39,7 @@ var logFatal = func(format string, v ...interface{}) {
 
 func main() {
 	slog.Info("=========================================================")
+	slog.Info("         SACP WARM-START DAEMON ENGAGED          ")
 	slog.Info("         SOVEREIGN NATIVES ORCHESTRATOR          ")
 	slog.Info("=========================================================")
 	
@@ -119,7 +120,7 @@ func main() {
 				logFatal("Assimilation failed: %v", err)
 			}
 
-			actionName := "remediate-" + filepath.Base(targetWS)
+			actionName := "remediate-" + filepath.Base(filepath.FromSlash(targetWS))
 			err = engine.Transform(ctx, actionName)
 			if err != nil {
 				logFatal("Transformation failed: %v", err)

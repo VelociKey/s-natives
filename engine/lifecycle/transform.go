@@ -86,6 +86,34 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string) error {
 		return nil
 	}
 
+	if action == "remediate-s-natives" {
+		nativesDir := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-natives")
+		engineGoPath := filepath.Join(nativesDir, "natvs_engine.go")
+		log.Printf("[NATVS] Remediation target file: %s", engineGoPath)
+
+		content, err := os.ReadFile(engineGoPath)
+		if err != nil {
+			return fmt.Errorf("failed to read natvs_engine.go: %w", err)
+		}
+		strContent := string(content)
+
+		targetMarker := `slog.Info("=========================================================")`
+		replacement := `slog.Info("=========================================================")
+	slog.Info("         SACP WARM-START DAEMON ENGAGED          ")`
+
+		if !strings.Contains(strContent, "SACP WARM-START DAEMON ENGAGED") {
+			strContent = strings.Replace(strContent, targetMarker, replacement, 1)
+			err = os.WriteFile(engineGoPath, []byte(strContent), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to update natvs_engine.go: %w", err)
+			}
+			log.Printf("[NATVS] Transformation 'remediate-s-natives' successfully applied changes to natvs_engine.go.")
+		} else {
+			log.Printf("[NATVS] Transformation 'remediate-s-natives' already applied. No changes needed.")
+		}
+		return nil
+	}
+
 	if action == "refactor-taxonomy-casing" {
 		replacements := map[string]string{
 			"00" + "FLOW":        "00flow",
