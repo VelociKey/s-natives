@@ -1,12 +1,13 @@
 package lifecycle
  
 import (
-	"hash/fnv"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"sov.fleet/s-sacp/81000-active-source/pkg/broker"
 )
 
 // NATVSPhase represents a single state in the sovereign orchestration lifecycle.
@@ -63,12 +64,19 @@ func NewNATVSEngine(workspace string) *NATVSEngine {
 // GetCoordinationEndpoint returns the network type and address (UDS path) for coordination.
 func (e *NATVSEngine) GetCoordinationEndpoint() (network, address string) {
 	sockPath := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-fab-aides/c0990-ephemeral-scratch/sacp.sock")
-	return "unix", sockPath
+	cfg := broker.Config{
+		WorkspacePath: e.Config.WorkspaceRoot,
+		SocketPath:    sockPath,
+	}
+	coord := broker.NewCoordinator(cfg, nil)
+	return coord.GetCoordinationEndpoint()
 }
 
 // GetDeterministicTCPPort returns a deterministic private TCP port based on workspace root hashing.
 func (e *NATVSEngine) GetDeterministicTCPPort() int {
-	h := fnv.New32a()
-	h.Write([]byte(filepath.Clean(e.Config.WorkspaceRoot)))
-	return 49152 + int(h.Sum32()%16383)
+	cfg := broker.Config{
+		WorkspacePath: e.Config.WorkspaceRoot,
+	}
+	coord := broker.NewCoordinator(cfg, nil)
+	return coord.GetDeterministicTCPPort()
 }

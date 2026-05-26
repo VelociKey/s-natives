@@ -4,13 +4,44 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"sov.fleet/s-natives/engine/lifecycle"
+	"sov.fleet/s-sacp/81000-active-source/pkg/broker"
 )
+
+type EchoBackend struct{}
+
+func (b *EchoBackend) Initialize(ctx context.Context) error { return nil }
+func (b *EchoBackend) Validate(ctx context.Context) error   { return nil }
+func (b *EchoBackend) Dial(ctx context.Context) (net.Conn, error) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		defer l.Close()
+		c, err := l.Accept()
+		if err != nil {
+			return
+		}
+		defer c.Close()
+		buf := make([]byte, 1024)
+		for {
+			n, err := c.Read(buf)
+			if err != nil {
+				return
+			}
+			_, _ = c.Write([]byte("ACK: " + string(buf[:n])))
+		}
+	}()
+	return net.Dial("tcp", l.Addr().String())
+}
+func (b *EchoBackend) Shutdown(ctx context.Context) error { return nil }
 
 // Facade Types and Constants for Backward Compatibility with Tests and External Packages
 
@@ -94,7 +125,14 @@ func main() {
 
 		if objective == "daemon" {
 			slog.Info("Running as background coordination daemon...")
-			coordinator := lifecycle.NewCoordinator(engine)
+			sockPath := filepath.Join(engine.Config.WorkspaceRoot, "00flow/s-fab-aides/c0990-ephemeral-scratch/sacp.sock")
+			cfg := broker.Config{
+				Name:          "natvs-engine",
+				WorkspacePath: engine.Config.WorkspaceRoot,
+				SocketPath:    sockPath,
+				IdleTimeout:   engine.Config.IdleTimeout,
+			}
+			coordinator := broker.NewCoordinator(cfg, &EchoBackend{})
 			if err := coordinator.Start(); err != nil {
 				logFatal("Failed to start coordinator daemon: %v", err)
 			}

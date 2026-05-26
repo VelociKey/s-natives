@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
-	"sov.fleet/s-natives/engine/lifecycle"
+	"sov.fleet/s-sacp/81000-active-source/pkg/broker"
 )
 
 func TestNATVSComprehensive(t *testing.T) {
@@ -417,8 +417,16 @@ func TestNATVSCoordinatorLifecycle(t *testing.T) {
 	engine := NewNATVSEngine(tempWS)
 	engine.Config.IdleTimeout = 500 * time.Millisecond
 
+	sockPath := filepath.Join(engine.Config.WorkspaceRoot, "00flow/s-fab-aides/c0990-ephemeral-scratch/sacp.sock")
+	cfg := broker.Config{
+		Name:          "natvs-engine",
+		WorkspacePath: engine.Config.WorkspaceRoot,
+		SocketPath:    sockPath,
+		IdleTimeout:   engine.Config.IdleTimeout,
+	}
+
 	// 1. Start the coordinator daemon manually
-	coord := lifecycle.NewCoordinator(engine)
+	coord := broker.NewCoordinator(cfg, &EchoBackend{})
 	err := coord.Start()
 	if err != nil {
 		t.Fatalf("Failed to start coordinator: %v", err)
@@ -426,10 +434,10 @@ func TestNATVSCoordinatorLifecycle(t *testing.T) {
 	defer coord.Close()
 
 	// 2. Connect to the coordinator (first client)
-	netType, addr := engine.GetCoordinationEndpoint()
+	netType, addr := coord.GetCoordinationEndpoint()
 	if netType == "unix" && len(addr) >= 104 {
 		netType = "tcp"
-		addr = fmt.Sprintf("127.0.0.1:%d", engine.GetDeterministicTCPPort())
+		addr = fmt.Sprintf("127.0.0.1:%d", coord.GetDeterministicTCPPort())
 	}
 	conn1, err := net.Dial(netType, addr)
 	if err != nil {
@@ -491,11 +499,18 @@ func TestNATVSCoordinatorStaleSocketCleaning(t *testing.T) {
 			t.Fatalf("Failed to write stale socket file: %v", err)
 		}
 		
-		// Run DialOrSpawnCoordinator. Since there's no actual listener, it will fail
+		// Run DialOrSpawnBroker. Since there's no actual listener, it will fail
 		// but it must have cleaned up the stale file during its run.
-		_, err = lifecycle.DialOrSpawnCoordinator(engine)
+		sockPath := filepath.Join(engine.Config.WorkspaceRoot, "00flow/s-fab-aides/c0990-ephemeral-scratch/sacp.sock")
+		cfg := broker.Config{
+			Name:          "natvs-engine",
+			WorkspacePath: engine.Config.WorkspaceRoot,
+			SocketPath:    sockPath,
+			IdleTimeout:   engine.Config.IdleTimeout,
+		}
+		_, err = broker.DialOrSpawnBroker(cfg, &EchoBackend{}, []string{"go", "run", "."})
 		if err == nil {
-			t.Fatal("Expected DialOrSpawnCoordinator to fail, but it succeeded")
+			t.Fatal("Expected DialOrSpawnBroker to fail, but it succeeded")
 		}
 		
 		// Verify that the stale socket file was successfully unlinked
