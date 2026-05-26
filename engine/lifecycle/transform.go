@@ -86,6 +86,34 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string) error {
 		return nil
 	}
 
+	if action == "remediate-s-sacp" {
+		sacpDir := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-sacp")
+		brokerGoPath := filepath.Join(sacpDir, "81000-active-source/pkg/broker/broker.go")
+		log.Printf("[NATVS] Remediation target file: %s", brokerGoPath)
+
+		content, err := os.ReadFile(brokerGoPath)
+		if err != nil {
+			return fmt.Errorf("failed to read broker.go: %w", err)
+		}
+		strContent := string(content)
+
+		targetMarker := `slog.Info("SACP Coordinator Broker active", "net", netType, "addr", addr)`
+		replacement := `slog.Info("SACP Coordinator Broker active", "net", netType, "addr", addr)
+	slog.Info("SACP Broker Lifecycle Engine initialized successfully")`
+
+		if !strings.Contains(strContent, "SACP Broker Lifecycle Engine initialized successfully") {
+			strContent = strings.Replace(strContent, targetMarker, replacement, 1)
+			err = os.WriteFile(brokerGoPath, []byte(strContent), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to update broker.go: %w", err)
+			}
+			log.Printf("[NATVS] Transformation 'remediate-s-sacp' successfully applied changes to broker.go.")
+		} else {
+			log.Printf("[NATVS] Transformation 'remediate-s-sacp' already applied. No changes needed.")
+		}
+		return nil
+	}
+
 	if action == "remediate-s-natives" {
 		nativesDir := filepath.Join(e.Config.WorkspaceRoot, "00flow/s-natives")
 		engineGoPath := filepath.Join(nativesDir, "natvs_engine.go")

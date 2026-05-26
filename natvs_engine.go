@@ -174,6 +174,11 @@ func main() {
 				if importPath == "sov.fleet/s-latentlingua" {
 					importPath = "sov.fleet/s-latentlingua/..."
 				}
+			} else if strings.HasPrefix(targetWS, "00flow/s-sacp") {
+				importPath = strings.Replace(targetWS, "00flow/s-sacp", "sov.fleet/s-sacp", 1)
+				if importPath == "sov.fleet/s-sacp" {
+					importPath = "sov.fleet/s-sacp/..."
+				}
 			}
 			importPath = filepath.ToSlash(importPath)
 
