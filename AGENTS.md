@@ -62,4 +62,29 @@ Measures the performance improvements of Go-native command polyfills (`pkg/bash`
 ```
 * **Performance Baseline:** Bypasses process startup allocation delays entirely, demonstrating a **>3,400x speedup** (microsecond vs. millisecond scale) for file scans and pattern matching.
 
+---
+
+## ⚡ Warm Jules QUIC Control Channels & Session Optimization
+
+To eliminate the cold boot latency of Firecracker guest VMs and remove the overhead of external subprocess forks, the control plane transport layer utilizes persistent QUIC channels:
+
+### 1. Persistent QUIC Control Channel
+- **Implementation**: During daemon startup, a persistent QUIC connection is established over UDP (via `quic-go`).
+- **Keep-Alives**: The session uses an aggressive 15-second `KeepAlivePeriod` to keep stateful host firewalls from closing idle connection paths.
+- **Subprocess Decoupling**: Strips subprocess polling and CLI forks (`exec.Command` checks) in favor of inline connection health verification.
+
+### 2. Session State & Credential Isolation (`trackingScope`)
+- **Scoped Environments**: The `BuildSandboxEnv` generator is parameterized with a dynamic `trackingScope` string.
+- **Directory Taxonomies**: Credentials and user profile caches are isolated under `c1000-credentials/<trackingScope>/`.
+- **Environment Remapping**: USERPROFILE, APPDATA, and LOCALAPPDATA env arrays are dynamically remapped to match the active scope.
+
+### 3. Stream-Level Task Isolation
+- **Isolated Contexts**: Every task opened from `tasks.queue.webnf` provisions a brand-new QUIC stream via `OpenStreamSync` over the parent connection.
+- **Control Frames**: An initial control frame containing the unique task ID and workspace path coordinates is serialized first.
+- **Error Routing**: Failures and compilation logs are routed exclusively through the stream context so that failures on Task A do not destabilize the connection for Task B.
+
+### 4. Warm-VM Lifecycle Bypass
+- **Bypass Rule**: If a warm connection matching the target workspace or silo is verified, the engine bypasses `Negotiate` and `Assimilation` completely.
+- **Direct Leap**: It leaps straight into `Transform` and `Verification`, avoiding microVM cold boots.
+
 

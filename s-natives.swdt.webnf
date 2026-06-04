@@ -1,4 +1,17 @@
 # s-natives Workspace DNA (swdt)
 workspace_name = "s-natives"
 
-last_assessment = "2026-05-26T02:08:11Z"
+Domain "00000-constitution" {
+    Subgroup "authority" {
+        Entry "01000-mission-purpose" .
+        Entry "03000-pulse-progress" .
+        Entry "04000-daily-chronicles" .
+        Entry "08000-attestation-snapshot" .
+    }
+}
+Domain "81000-active-source" {
+    Subgroup "development" {
+        Entry "cmd" .
+        Entry "pkg" .
+    }
+}

@@ -1,38 +1,95 @@
 # SACP Coordination Daemon Design Specifications
 
-This document defines the core specifications for port selection, lazy daemon instantiation, and transparent connection fallbacks.
+This document defines the design specifications for process isolation, task serialization formats, and transaction-based locking workflows.
 
-## 1. Lazy Instantiation & Elevation Flow
+## 1. Process Isolation & Spawn Flow
 
-1. The initial CLI command is initiated and starts SACP negotiation over basic UDP loopback.
-2. Once the metabolic hot-swap handshake validates and elevates the session to **QUIC**, `natvs-engine` checks for a running coordination daemon.
-3. If no daemon is listening on the designated Unix Domain Socket (UDS) path or deterministic TCP port, the CLI spawns the daemon as an independent background process.
-
-## 2. Deterministic TCP Port Selection
-
-To prevent collisions with other developer-facing services, a deterministic private port in the range `49152` to `65535` (span: `16383`) is calculated by applying FNV-1a hashing on the absolute path of the workspace:
-
-$$\text{Port} = 49152 + (\text{FNV-1a}(\text{AbsoluteWorkspaceRoot}) \pmod{16383})$$
-
-This prevents separate workspaces from interfering with each other's daemon connection pools.
-
-## 3. Resilient Fallback Mechanics
+To prevent the external companion daemon from inheriting the IDE's environment variables and ambient authentication tokens, it is spawned as a detached background process with a minimal whitelisted environment:
 
 ```mermaid
 sequenceDiagram
-    participant CLI as natvs-engine CLI
-    participant Daemon as Host Coordinator
-    participant Guest as Jules VM
+    participant IDE as IDE Client
+    participant OS as Operating System
+    participant Daemon as Companion Server
     
-    CLI->>Daemon: Dial Socket (UDS/TCP)
-    alt Dial Fails (Stale socket file on disk)
-        CLI->>CLI: Unlink Socket File
-        CLI->>Daemon: Spawn New Daemon & Dial
+    IDE->>OS: Read daemon.port & Try Connect
+    alt Connection Succeeds (Daemon Running)
+        Note over IDE: Proceed to task delegation
+    else Connection Fails (Daemon Not Running)
+        IDE->>IDE: Sanitize Environment (Keep only Whitelist)
+        IDE->>OS: Spawn Process with Stdout Pipe (CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS)
+        OS-->>Daemon: Start in Background
+        Daemon->>OS: Lock (natvs-queue.lock)
+        Daemon->>Daemon: Start TCP trigger listener
+        Daemon->>IDE: Write "PORT <port>\n" to stdout
+        IDE->>IDE: Read PORT and close stdout pipe
     end
-    Daemon->>Guest: Validate Active QUIC Link
-    alt Link Dead / VM unresponsive
-        Daemon->>Daemon: Terminate stale VM
-        Daemon->>Guest: Boot fresh Firecracker VM & Upstream
-    end
-    Daemon-->>CLI: Route SACP command stream
+    IDE->>Daemon: Send "WAIT <task-id>" via TCP connection
+    Daemon->>Daemon: Run task (Transform & Verify)
+    Daemon->>IDE: Write success/failure outcome to connection
 ```
+
+## 2. weBNF Task Serialization Schema
+
+All queue registers are governed by formal flat-block weBNF structures separating Task Metadata/State, Task Input payload, and Task Output outcomes.
+
+### Task Input Schema (`tasks.queue.webnf`)
+```webnf
+Task "<task-id>" {
+    timestamp = "<rfc3339>"
+    state = "created" | "in_progress"
+    objective = "<command-objective>"
+    context_path = "<context-path>"
+    workspace = "<target-workspace>"
+}
+```
+
+### Task Output Schema (`tasks.completed.webnf`)
+```webnf
+TaskResult "<task-id>" {
+    timestamp = "<rfc3339>"
+    status = "completed_success" | "completed_failure"
+    delta_paths = [
+        "<file-path-1>",
+        "<file-path-2>"
+    ]
+    error = "<error-message>"
+}
+```
+
+## 3. Transaction-Based Queue Workflow
+
+To prevent read-modify-write (RMW) race conditions between the IDE Client and the Companion Server during concurrent read/write operations, a transaction locking protocol is enforced:
+
+```mermaid
+sequenceDiagram
+    participant Client as IDE Client
+    participant Lock as Lock File (.lock)
+    participant Queue as Queue File (.webnf)
+    participant Daemon as Companion Daemon
+
+    Note over Client, Daemon: Client appends task to queue
+    Client->>Lock: BeginQueueTransaction() (Lock exclusively)
+    Client->>Queue: Read current tasks
+    Client->>Queue: Write updated tasks (with new task)
+    Client->>Lock: Commit() (Release lock)
+
+    Note over Daemon: Daemon watches queue and processes task
+    Daemon->>Lock: BeginQueueTransaction() (Lock exclusively)
+    Daemon->>Queue: Read current tasks
+    Daemon->>Queue: Update target task to in_progress & Write
+    Daemon->>Lock: Commit() (Release lock)
+    
+    Note over Daemon: Execution in progress...
+    
+    Daemon->>Lock: BeginQueueTransaction() (Lock exclusively)
+    Daemon->>Queue: Read current tasks
+    Daemon->>Queue: Write tasks (with completed task removed)
+    Daemon->>Lock: Commit() (Release lock)
+```
+
+## 4. Rationale for cnnnn- Directory Storage
+
+Transient coordination files (`tasks.queue.webnf`, `tasks.completed.webnf`, `natvs-queue.lock`) are kept in the cognitive ephemeral workspace directories prefixing with `cnnnn-` (`c0990-ephemeral-scratch/natvs coordination/`).
+- **Antigravity Ignoring**: By core system guidelines, `.antigravityignore` contains patterns that ignore `cnnnn-` directories to exclude them from indexing.
+- **Resource Preservation**: Indexing frequently changed, lock-contended files inside the IDE leads to severe performance degradation. Grouping them under `cnnnn-` directories completely bypasses the indexing pipeline, ensuring smooth, low-latency IDE operations.

@@ -7,8 +7,8 @@ workspace_harness {
         target {
             mode : DYNAMIC ;
             engine : "go-compiler" ;
-            src : "s-natives" ;
-            out : "s-natives" ;
+            src : "89000-internal-actors-source" ;
+            out : "natvs-engine.exe" ;
             category : "ACTOR" ;
         }
     }

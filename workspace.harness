@@ -2,6 +2,6 @@ workspace: natives
 
 go_build {
     type: NATIVE
-    src: "."
+    src: "./89000-internal-actors-source"
     out: "natvs-engine.exe"
 }
