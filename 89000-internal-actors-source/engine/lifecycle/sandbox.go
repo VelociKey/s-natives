@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ func ReadGoalFromFile(path string) (string, error) {
 }
 
 func BuildSandboxEnv(workspaceRoot string, trackingScope string) []string {
-	sandboxHome := filepath.Join(workspaceRoot, "00flow/s-forge/94000-external-actors/jules/c1000-credentials")
+	sandboxHome := filepath.Join(workspaceRoot, "00flow/s-natives/c1000-credentials")
 	if trackingScope != "" {
 		sandboxHome = filepath.Join(sandboxHome, trackingScope)
 	}
@@ -101,6 +102,57 @@ func BuildSandboxEnv(workspaceRoot string, trackingScope string) []string {
 			"XDG_CONFIG_HOME="+configDir,
 		)
 	}
+
+	// Metabolic prune Chrome User Data bloat before spawning tasks
+	go PruneChromeProfile(sandboxHome)
+
 	return env
+}
+
+// PruneChromeProfile scans the remapped Chrome profile directory and recursively deletes all files
+// that do not contain token or session cookies (such as code caches, dictionaries, extensions, model stores).
+func PruneChromeProfile(sandboxHome string) {
+	localApp := filepath.Join(sandboxHome, "localappdata", "Google", "Chrome", "User Data")
+	if _, err := os.Stat(localApp); os.IsNotExist(err) {
+		return
+	}
+
+	// Whitelisted files and folders essential for cookie-based session token storage
+	isWhitelisted := func(path string) bool {
+		pathSlash := strings.ToLower(filepath.ToSlash(path))
+		
+		// Always whitelisting parent structure paths leading to network cookies and local storage
+		if strings.Contains(pathSlash, "/user data/default") {
+			if strings.Contains(pathSlash, "/network") || strings.Contains(pathSlash, "/local storage") {
+				return true
+			}
+			// Let directory walk proceed down into Network or Local Storage
+			if pathSlash == strings.ToLower(filepath.ToSlash(filepath.Join(localApp, "Default"))) {
+				return true
+			}
+		}
+		
+		parts := strings.Split(pathSlash, "/")
+		for _, part := range parts {
+			if part == "whoami.txt" || part == "tier.txt" {
+				return true
+			}
+		}
+		return false
+	}
+
+	filepath.WalkDir(localApp, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		// If it's a file, delete if not whitelisted
+		if !isWhitelisted(path) {
+			_ = os.Remove(path)
+		}
+		return nil
+	})
 }
 

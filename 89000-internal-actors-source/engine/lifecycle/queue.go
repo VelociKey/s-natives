@@ -274,6 +274,8 @@ func ParseQueueFile(path string) ([]TaskInput, error) {
 	var currentTask *TaskInput
 
 	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 64*1024)
+	scanner.Buffer(buf, 10*1024*1024) // Support tokens up to 10MB
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -405,6 +407,8 @@ func ParseCompletedFile(path string) ([]TaskOutput, error) {
 	var inDeltaPaths bool
 
 	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 64*1024)
+	scanner.Buffer(buf, 10*1024*1024) // Support tokens up to 10MB
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {

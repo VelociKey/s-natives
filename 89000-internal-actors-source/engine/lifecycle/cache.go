@@ -29,6 +29,7 @@ func ComputeGitStateKey(workspaceRoot, workspaceRelPath string) (string, error) 
 
 	// 1. Get latest commit hash affecting the relative path
 	cmdLog := exec.Command("git", "log", "-n", "1", "--pretty=format:%H", ".")
+	SetNoWindow(cmdLog)
 	cmdLog.Dir = targetDir
 	var outLog bytes.Buffer
 	cmdLog.Stdout = &outLog
@@ -39,6 +40,7 @@ func ComputeGitStateKey(workspaceRoot, workspaceRelPath string) (string, error) 
 
 	// 2. Get git status --porcelain for the relative path
 	cmdStatus := exec.Command("git", "status", "--porcelain", ".")
+	SetNoWindow(cmdStatus)
 	cmdStatus.Dir = targetDir
 	var outStatus bytes.Buffer
 	cmdStatus.Stdout = &outStatus

@@ -17,13 +17,13 @@ import (
 
 // Verification executes phase 4 conformance audits and test compilations.
 func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) error {
-	e.State = PhaseVerification
-	slog.Info("Phase 4: Triggering verification harness suite", "package", testPackage)
-
 	if os.Getenv("SKIP_RECURSIVE_TESTS") == "true" {
 		slog.Info("Skipping verification harness under test environment")
 		return nil
 	}
+
+	testPackage = filepath.ToSlash(testPackage)
+	testPackage = strings.TrimPrefix(testPackage, "./")
 
 	goBin := discoverGoBinary(e.Config.WorkspaceRoot)
 
@@ -75,6 +75,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 			if _, err := os.Stat(harnessPath); err == nil {
 				slog.Info("Executing pre-verification local rehydration", "workspace", ws)
 				cmdRehydrate := exec.CommandContext(ctx, rehydratorBin, "-harness", harnessPath, "-local-only")
+				SetNoWindow(cmdRehydrate)
 				cmdRehydrate.Dir = e.Config.WorkspaceRoot
 				var rehydrateBuf bytes.Buffer
 				rehydrateBuf.Grow(8192)
@@ -172,6 +173,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 			slog.Info("Running tests in packages", "packages", dirsToTest, "workspace", ws)
 			args := append([]string{"test", "-v"}, dirsToTest...)
 			cmd := exec.CommandContext(ctx, goBin, args...)
+			SetNoWindow(cmd)
 			cmd.Dir = wsPath
 			var logBuf bytes.Buffer
 			logBuf.Grow(8192)
@@ -222,6 +224,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 	if _, err := os.Stat(harnessPath); err == nil {
 		slog.Info("Executing pre-verification local rehydration for target", "package", testPackage)
 		cmdRehydrate := exec.CommandContext(ctx, rehydratorBin, "-harness", harnessPath, "-local-only")
+		SetNoWindow(cmdRehydrate)
 		cmdRehydrate.Dir = e.Config.WorkspaceRoot
 		var rehydrateBuf bytes.Buffer
 		rehydrateBuf.Grow(8192)
@@ -255,6 +258,20 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 		if !strings.Contains(trimmed, "/") {
 			isWorkspacePackage = true
 			wsPath = filepath.Join(e.Config.WorkspaceRoot, "00flow", trimmed)
+		}
+	} else if strings.HasPrefix(testPackage, "00flow/") {
+		trimmed := strings.TrimPrefix(testPackage, "00flow/")
+		trimmed = strings.TrimSuffix(trimmed, "/...")
+		if !strings.Contains(trimmed, "/") {
+			isWorkspacePackage = true
+			wsPath = filepath.Join(e.Config.WorkspaceRoot, "00flow", trimmed)
+		}
+	} else if strings.HasPrefix(testPackage, "00xper/") {
+		trimmed := strings.TrimPrefix(testPackage, "00xper/")
+		trimmed = strings.TrimSuffix(trimmed, "/...")
+		if !strings.Contains(trimmed, "/") {
+			isWorkspacePackage = true
+			wsPath = filepath.Join(e.Config.WorkspaceRoot, "00xper", trimmed)
 		}
 	}
 
@@ -333,6 +350,7 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 		slog.Info("Executing batched verification test targets", "targets", targets)
 		args := append([]string{"test", "-v"}, targets...)
 		cmd := exec.CommandContext(ctx, goBin, args...)
+		SetNoWindow(cmd)
 		cmd.Dir = e.Config.WorkspaceRoot
 		var logBuf bytes.Buffer
 		logBuf.Grow(8192)
@@ -359,6 +377,7 @@ func (e *NATVSEngine) runConformanceCheck(ctx context.Context, targetDir string)
 	slog.Info("Running static conformance scanner", "dir", targetDir)
 
 	cmd := exec.CommandContext(ctx, conformanceBin, "-dir", targetDir, "-report-dir", reportDir)
+	SetNoWindow(cmd)
 	cmd.Dir = e.Config.WorkspaceRoot
 
 	var logBuf bytes.Buffer

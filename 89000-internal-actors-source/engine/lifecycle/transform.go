@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -38,6 +39,7 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string, contextPath 
 		log.Printf("[NATVS] Running create-compendium for workspace: %s", wsPath)
 
 		cmd := exec.CommandContext(ctx, compendiumBin, "-workspace", wsPath)
+		SetNoWindow(cmd)
 		cmd.Dir = e.Config.WorkspaceRoot
 
 		var logBuf bytes.Buffer
@@ -63,32 +65,52 @@ func runJulesTaskFromTransform(e *NATVSEngine, action string, contextPath string
 	workspaceRoot := e.Config.WorkspaceRoot
 	julesPath := filepath.Clean(filepath.Join(workspaceRoot, "00flow", "s-forge", "94000-external-actors", "jules", "jules"+GetExeSuffix()))
 
-	repoPath := workspaceRoot
-
 	goal, err := ReadGoalFromFile(contextPath)
 	if err != nil {
 		return fmt.Errorf("failed to read goal from %s: %w", contextPath, err)
 	}
 
-	scope := ""
-	e.Config.Mu.Lock()
-	if e.Config.CurrentWorkspace != "" {
-		scope = filepath.Base(e.Config.CurrentWorkspace)
+	execJules := func() (string, error) {
+		cmd := exec.Command(julesPath, "new", "--repo", ".", goal)
+		SetNoWindow(cmd)
+		cmd.Dir = workspaceRoot
+		cmd.Env = BuildSandboxEnv(workspaceRoot, "")
+		var outBuf bytes.Buffer
+		cmd.Stdout = &outBuf
+		cmd.Stderr = &outBuf
+		runErr := cmd.Run()
+		return outBuf.String(), runErr
 	}
-	e.Config.Mu.Unlock()
 
-	cmd := exec.Command(julesPath, "new", "--repo", repoPath, goal)
-	cmd.Env = BuildSandboxEnv(workspaceRoot, scope)
-
-	var outBuf bytes.Buffer
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &outBuf
-
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("jules execution failed (stdout/stderr: %s): %w", outBuf.String(), err)
+	outputStr, runErr := execJules()
+	if runErr != nil {
+		// Detect 401 or UNAUTHENTICATED error in output
+		if strings.Contains(outputStr, "401") || strings.Contains(outputStr, "UNAUTHENTICATED") || strings.Contains(strings.ToLower(outputStr), "login") {
+			log.Printf("[NATVS] Authentication failure detected during Jules run. Attempting automatic interactive login...")
+			
+			// Execute jules login using standard inputs/outputs to prompt the user
+			loginCmd := exec.Command(julesPath, "login")
+			loginCmd.Dir = workspaceRoot
+			loginCmd.Env = BuildSandboxEnv(workspaceRoot, "")
+			loginCmd.Stdin = os.Stdin
+			loginCmd.Stdout = os.Stdout
+			loginCmd.Stderr = os.Stderr
+			
+			if loginErr := loginCmd.Run(); loginErr != nil {
+				return fmt.Errorf("automatic interactive login failed: %w", loginErr)
+			}
+			
+			log.Printf("[NATVS] Automatic login complete. Retrying original Jules task...")
+			outputStr, runErr = execJules()
+			if runErr != nil {
+				return fmt.Errorf("jules execution failed on retry (stdout/stderr: %s): %w", outputStr, runErr)
+			}
+		} else {
+			return fmt.Errorf("jules execution failed (stdout/stderr: %s): %w", outputStr, runErr)
+		}
 	}
-	log.Printf("[NATVS] Phase 3 (Transform): Jules executed successfully. Output: %s", outBuf.String())
+
+	log.Printf("[NATVS] Phase 3 (Transform): Jules executed successfully. Output: %s", outputStr)
 	e.LastChanges = []string{"*"}
 	e.LastReason = "Jules code remediation executed successfully during Transform phase"
 	return nil

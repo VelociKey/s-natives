@@ -138,10 +138,10 @@ To ensure Jules CLI runs completely decoupled from host OS profiles and Antigrav
 
 ### I. Sandbox Environment Construction
 - **Path Isolation**: When launching Jules, `buildSandboxEnv()` overrides the process environment to redirect all standard config directories into the workspace silo:
-  - `USERPROFILE` -> `00flow/s-forge/94000-external-actors/jules/c1000-credentials/user`
-  - `APPDATA` -> `00flow/s-forge/94000-external-actors/jules/c1000-credentials/appdata`
-  - `LOCALAPPDATA` -> `00flow/s-forge/94000-external-actors/jules/c1000-credentials/localappdata`
-  - `ProgramData` -> `00flow/s-forge/94000-external-actors/jules/c1000-credentials/programdata`
+  - `USERPROFILE` -> `00flow/s-natives/c1000-credentials/user`
+  - `APPDATA` -> `00flow/s-natives/c1000-credentials/appdata`
+  - `LOCALAPPDATA` -> `00flow/s-natives/c1000-credentials/localappdata`
+  - `ProgramData` -> `00flow/s-natives/c1000-credentials/programdata`
 - **Zero Secrets Forwarding**: Host variables containing tokens or API keys (`GEMINI_API_KEY`, `JULES_TOKEN`, `GOOGLE_*`) are stripped entirely, forcing the subprocess to authenticate purely against credentials cached inside the sandbox.
 
 ### II. Sandbox Identity Tracking (`whoami.txt`)

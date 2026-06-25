@@ -17,13 +17,14 @@ func runJulesStatusCheck(engine *NATVSEngine) error {
 	julesPath := filepath.Clean(filepath.Join(workspaceRoot, "00flow", "s-forge", "94000-external-actors", "jules", "jules"+lifecycle.GetExeSuffix()))
 
 	cmdSession := exec.Command(julesPath, "remote", "list", "--session")
+	lifecycle.SetNoWindow(cmdSession)
 	cmdSession.Env = lifecycle.BuildSandboxEnv(workspaceRoot, "")
 	sessionBytes, err := cmdSession.CombinedOutput()
 	sessionStr := "none"
 	var whoamiStr string
 	if err == nil {
 		sessionStr = strings.TrimSpace(string(sessionBytes))
-		whoamiStr = "Active (Cached in s-forge sandbox)"
+		whoamiStr = "Active (Cached in s-natives sandbox)"
 	} else {
 		sessionStr = strings.TrimSpace(string(sessionBytes))
 		if sessionStr == "" {
@@ -46,7 +47,7 @@ func runJulesStatusCheck(engine *NATVSEngine) error {
 	}
 
 	pendingQueueCount := 0
-	queuePath := filepath.Join(workspaceRoot, "c0990-ephemeral-scratch/natvs coordination/tasks.queue.webnf")
+	queuePath := filepath.Join(workspaceRoot, "00flow/s-natives/c0990-ephemeral-scratch/natvs coordination/tasks.queue.webnf")
 	if queueTasks, queueErr := ParseQueueFileAtomic(queuePath); queueErr == nil {
 		for _, t := range queueTasks {
 			if t.State == StateCreated || t.State == StateInProgress {
@@ -61,7 +62,7 @@ func runJulesStatusCheck(engine *NATVSEngine) error {
 	}
 
 	email := strings.ToLower(getSandboxedEmail(workspaceRoot))
-	tierPath := filepath.Join(workspaceRoot, "00flow/s-forge/94000-external-actors/jules/c1000-credentials/tier.txt")
+	tierPath := filepath.Join(workspaceRoot, "00flow/s-natives/c1000-credentials/tier.txt")
 	var savedTier string
 	if tierData, tierErr := os.ReadFile(tierPath); tierErr == nil {
 		savedTier = strings.TrimSpace(strings.ToLower(string(tierData)))
@@ -96,7 +97,7 @@ func runJulesLogin(engine *NATVSEngine) error {
 	workspaceRoot := engine.Config.WorkspaceRoot
 	julesPath := filepath.Clean(filepath.Join(workspaceRoot, "00flow", "s-forge", "94000-external-actors", "jules", "jules"+lifecycle.GetExeSuffix()))
 
-	sandboxHome := filepath.Join(workspaceRoot, "00flow", "s-forge", "94000-external-actors", "jules", "c1000-credentials")
+	sandboxHome := filepath.Join(workspaceRoot, "00flow", "s-natives", "c1000-credentials")
 	if errDel := os.RemoveAll(sandboxHome); errDel != nil {
 		slog.Warn("Failed to clean up sandbox home credentials directory", "path", sandboxHome, "error", errDel)
 	}
@@ -126,7 +127,7 @@ func runJulesLogin(engine *NATVSEngine) error {
 		return err
 	}
 
-	whoamiDir := filepath.Join(workspaceRoot, "00flow/s-forge/94000-external-actors/jules/c1000-credentials")
+	whoamiDir := filepath.Join(workspaceRoot, "00flow/s-natives/c1000-credentials")
 	if errMkDir := os.MkdirAll(whoamiDir, 0755); errMkDir != nil {
 		slog.Warn("Failed to create whoami directory", "path", whoamiDir, "error", errMkDir)
 	}
@@ -184,7 +185,7 @@ func runJulesLogin(engine *NATVSEngine) error {
 }
 
 func getSandboxedEmail(workspaceRoot string) string {
-	whoamiPath := filepath.Join(workspaceRoot, "00flow/s-forge/94000-external-actors/jules/c1000-credentials/whoami.txt")
+	whoamiPath := filepath.Join(workspaceRoot, "00flow/s-natives/c1000-credentials/whoami.txt")
 	data, err := os.ReadFile(whoamiPath)
 	if err == nil {
 		return strings.TrimSpace(string(data))

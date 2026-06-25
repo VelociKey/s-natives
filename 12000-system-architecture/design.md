@@ -93,3 +93,16 @@ sequenceDiagram
 Transient coordination files (`tasks.queue.webnf`, `tasks.completed.webnf`, `natvs-queue.lock`) are kept in the cognitive ephemeral workspace directories prefixing with `cnnnn-` (`c0990-ephemeral-scratch/natvs coordination/`).
 - **Antigravity Ignoring**: By core system guidelines, `.antigravityignore` contains patterns that ignore `cnnnn-` directories to exclude them from indexing.
 - **Resource Preservation**: Indexing frequently changed, lock-contended files inside the IDE leads to severe performance degradation. Grouping them under `cnnnn-` directories completely bypasses the indexing pipeline, ensuring smooth, low-latency IDE operations.
+
+## 5. Jules Isolation Sandbox Layout
+
+To keep active credentials hermetically separated from global toolchain definitions, the environment profile directories are laid out under `s-natives/c1000-credentials` as follows:
+
+```
+00flow/s-natives/c1000-credentials/
+  ├── whoami.txt                  ← Active Google email address
+  ├── tier.txt                    ← Subscription tier status (pro/free)
+  ├── user/                       ← Remapped USERPROFILE (contains .jules/ logs)
+  ├── appdata/                    ← Remapped APPDATA
+  └── localappdata/               ← Remapped LOCALAPPDATA (contains Google/Chrome/User Data/ cookies)
+```

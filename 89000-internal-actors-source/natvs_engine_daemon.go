@@ -3,13 +3,8 @@ package main
 import (
 	"bufio"
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"log/slog"
-	"math/big"
 	"net"
 	"os"
 	"path/filepath"
@@ -19,6 +14,7 @@ import (
 	"time"
 
 	quic "sov.fleet/quic-go"
+	"sov.fleet/s-logiclibrary/00200-logic-libraries/quictransport"
 	"sov.fleet/s-natives/89000-internal-actors-source/engine/lifecycle"
 )
 
@@ -43,28 +39,12 @@ func isWorkspaceWarm(workspace string) bool {
 }
 
 func generateTLSConfig() *tls.Config {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	tlsConf, err := quictransport.GenerateEphemeralTLSConfig()
 	if err != nil {
 		panic(err)
 	}
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-	}
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
-	if err != nil {
-		panic(err)
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-
-	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
-	if err != nil {
-		panic(err)
-	}
-	return &tls.Config{
-		Certificates: []tls.Certificate{tlsCert},
-		NextProtos:   []string{"jules-sacp"},
-	}
+	tlsConf.NextProtos = []string{"jules-sacp"}
+	return tlsConf
 }
 
 func handleIncomingQUICStream(stream *quic.Stream) {
@@ -97,12 +77,17 @@ func handleIncomingQUICStream(stream *quic.Stream) {
 
 func initQUICControlChannel() error {
 	tlsConf := generateTLSConfig()
-	quicConf := &quic.Config{
-		KeepAlivePeriod: 15 * time.Second,
+	quicConf := quictransport.NewQUICConfig()
+	quicConf.KeepAlivePeriod = 15 * time.Second
+
+	conn, err := quictransport.ListenUDP("127.0.0.1:0")
+	if err != nil {
+		return err
 	}
 
-	listener, err := quic.ListenAddr("127.0.0.1:0", tlsConf, quicConf)
+	listener, err := quictransport.Listen(conn, tlsConf, quicConf)
 	if err != nil {
+		conn.Close()
 		return err
 	}
 
@@ -114,12 +99,22 @@ func initQUICControlChannel() error {
 	}
 
 	var dialErr error
-	var conn *quic.Conn
+	var dConn *quic.Conn
 	done := make(chan struct{})
 
 	go func() {
 		defer close(done)
-		conn, dialErr = quic.DialAddr(context.Background(), addr, dialTLSConf, quicConf)
+		udpDialAddr, err := net.ResolveUDPAddr("udp", addr)
+		if err != nil {
+			dialErr = err
+			return
+		}
+		rawDialConn, err := quictransport.ListenUDP("")
+		if err != nil {
+			dialErr = err
+			return
+		}
+		dConn, dialErr = quictransport.Dial(context.Background(), rawDialConn, udpDialAddr, dialTLSConf, quicConf)
 	}()
 
 	serverConn, acceptErr := listener.Accept(context.Background())
@@ -135,7 +130,7 @@ func initQUICControlChannel() error {
 	}
 
 	julesQuicMu.Lock()
-	julesQuicConn = conn
+	julesQuicConn = dConn
 	julesQuicMu.Unlock()
 
 	slog.Info("Persistent QUIC control channel established successfully", "localAddr", addr)

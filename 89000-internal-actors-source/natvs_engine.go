@@ -111,6 +111,7 @@ func main() {
 
 		// Run a quick check command to verify auth state
 		cmd := exec.Command(julesPath, "remote", "list", "--session")
+		lifecycle.SetNoWindow(cmd)
 		cmd.Env = lifecycle.BuildSandboxEnv(workspaceRoot, "")
 
 		err := cmd.Run()
@@ -236,7 +237,7 @@ func main() {
 
 	workspaceRoot := findWorkspaceRoot()
 
-	defaultCoordDir := filepath.Join(workspaceRoot, "c0990-ephemeral-scratch/natvs coordination")
+	defaultCoordDir := filepath.Join(workspaceRoot, "00flow", "s-natives", "c0990-ephemeral-scratch", "natvs coordination")
 	if err := os.MkdirAll(defaultCoordDir, 0755); err != nil {
 		slog.Error("Failed to create default coordination directory", "path", defaultCoordDir, "error", err)
 	}

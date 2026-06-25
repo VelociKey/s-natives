@@ -40,6 +40,8 @@ graph TD
 5. **No-Index Ephemeral Storage Rationale**:
    - The queue, completion log, and lock files are stored strictly under the `cnnnn-ephemeral-scratch` cognitive layer directory (specifically `c0990-ephemeral-scratch/natvs coordination/`).
    - This prevents Antigravity from indexing these highly volatile, frequently updated files, as `cnnnn-*` directories are ignored by default via `.antigravityignore`. This eliminates excessive IDE indexing and resource overhead.
+6. **Sovereign Credentials Sandbox Isolation**:
+   - Except for the raw `jules` executable itself (which resides on `s-forge`), the `s-natives` workspace handles everything needed to run Jules. All runtime credentials, environment profiles, and browser cookies are hermetically sandbox-mapped under `00flow/s-natives/c1000-credentials`, maintaining strict boundaries between binary storage and runtime authorization state.
 
 ## Future Abstractions and Improvements
 
