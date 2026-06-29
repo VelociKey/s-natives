@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 	"syscall"
 	"time"
@@ -332,29 +333,37 @@ func WriteQueueFile(path string, tasks []TaskInput) error {
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	if _, err := writer.WriteString("# tasks.queue.webnf\n\n"); err != nil {
+	if discardValLine335_0, err := writer.WriteString("# tasks.queue.webnf\n\n"); err != nil {
+		discard.Discard(discardValLine335_0)
 		return err
 	}
 	for _, task := range tasks {
-		if _, err := writer.WriteString(fmt.Sprintf("Task %q {\n", task.ID)); err != nil {
+		if discardValLine339_0, err := writer.WriteString(fmt.Sprintf("Task %q {\n", task.ID)); err != nil {
+			discard.Discard(discardValLine339_0)
 			return err
 		}
-		if _, err := writer.WriteString(fmt.Sprintf("    timestamp = %q\n", task.Timestamp.Format(time.RFC3339))); err != nil {
+		if discardValLine342_0, err := writer.WriteString(fmt.Sprintf("    timestamp = %q\n", task.Timestamp.Format(time.RFC3339))); err != nil {
+			discard.Discard(discardValLine342_0)
 			return err
 		}
-		if _, err := writer.WriteString(fmt.Sprintf("    state = %q\n", task.State)); err != nil {
+		if discardValLine345_0, err := writer.WriteString(fmt.Sprintf("    state = %q\n", task.State)); err != nil {
+			discard.Discard(discardValLine345_0)
 			return err
 		}
-		if _, err := writer.WriteString(fmt.Sprintf("    objective = %q\n", task.Objective)); err != nil {
+		if discardValLine348_0, err := writer.WriteString(fmt.Sprintf("    objective = %q\n", task.Objective)); err != nil {
+			discard.Discard(discardValLine348_0)
 			return err
 		}
-		if _, err := writer.WriteString(fmt.Sprintf("    context_path = %q\n", task.ContextPath)); err != nil {
+		if discardValLine351_0, err := writer.WriteString(fmt.Sprintf("    context_path = %q\n", task.ContextPath)); err != nil {
+			discard.Discard(discardValLine351_0)
 			return err
 		}
-		if _, err := writer.WriteString(fmt.Sprintf("    workspace = %q\n", task.Workspace)); err != nil {
+		if discardValLine354_0, err := writer.WriteString(fmt.Sprintf("    workspace = %q\n", task.Workspace)); err != nil {
+			discard.Discard(discardValLine354_0)
 			return err
 		}
-		if _, err := writer.WriteString("}\n\n"); err != nil {
+		if discardValLine357_0, err := writer.WriteString("}\n\n"); err != nil {
+			discard.Discard(discardValLine357_0)
 			return err
 		}
 	}
@@ -377,7 +386,7 @@ func AppendCompletedFile(path string, out TaskOutput) error {
 		deltaStr = "[\n" + strings.Join(deltaLines, ",\n") + "\n    ]"
 	}
 
-	_, err = file.WriteString(fmt.Sprintf("TaskResult %q {\n"+
+	discardValLine380_0, err := file.WriteString(fmt.Sprintf("TaskResult %q {\n"+
 		"    timestamp = %q\n"+
 		"    status = %q\n"+
 		"    delta_paths = %s\n"+
@@ -389,6 +398,7 @@ func AppendCompletedFile(path string, out TaskOutput) error {
 		deltaStr,
 		out.Error,
 	))
+	discard.Discard(discardValLine380_0)
 	return err
 }
 
@@ -495,4 +505,3 @@ func ParseCompletedFile(path string) ([]TaskOutput, error) {
 	}
 	return results, scanner.Err()
 }
-

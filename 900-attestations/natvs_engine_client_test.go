@@ -199,4 +199,3 @@ func TestMainFuncFailure(t *testing.T) {
 		t.Error("Expected execution to fail with non-zero exit code, but it succeeded")
 	}
 }
-

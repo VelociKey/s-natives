@@ -3,12 +3,11 @@ module sov.fleet/s-natives
 go 1.26.3
 
 require (
-	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	sov.fleet/blake3 v0.0.0-00010101000000-000000000000 // indirect
-	sov.fleet/s-latentlingua v0.0.0-00010101000000-000000000000 // indirect
 )
 
 require (
@@ -28,12 +27,12 @@ replace (
 	sov.fleet/99cbox-root => ../../99cbox/99cbox-root
 	sov.fleet/99cbox/99cbox-info => ../../99cbox/99cbox-info
 	sov.fleet/99cogt/99cogt-info => ../../99cogt/99cogt-info
-	sov.fleet/b-root => ../../00flob/b-root
 	sov.fleet/blake3 => ../s-forge/93000-external-libraries/blake3
 	sov.fleet/n-root => ../../00flon/n-root
 	sov.fleet/o-afflume => ../../00floo/o-afflume
 	sov.fleet/o-afflume-realization => ../../00floo/o-afflume-realization
 	sov.fleet/o-bankanchor => ../../00floo/o-bankanchor
+	sov.fleet/o-banking => ../../00floo/o-banking
 	sov.fleet/o-bankmachine => ../../00floo/o-bankmachine
 	sov.fleet/o-ingestion => ../../00floo/o-ingestion
 	sov.fleet/o-invoicing => ../../00floo/o-invoicing

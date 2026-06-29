@@ -16,4 +16,3 @@ func (e *NATVSEngine) Negotiate(ctx context.Context, targetWorkspace string) err
 	slog.Info("Handshake complete. Target verified inside secure loop.")
 	return nil
 }
-

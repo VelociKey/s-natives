@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 
 	"sov.fleet/s-natives/89000-internal-actors-source/engine/lifecycle"
@@ -86,7 +87,8 @@ func runJulesStatusCheck(engine *NATVSEngine) error {
 		"Session Tracking    : " + sessionStr + "\n" +
 		"Execution Track     : " + envLabel + "\n" +
 		"=========================================================\n"
-	if _, err := os.Stdout.Write([]byte(output)); err != nil {
+	if discardValLine89_0, err := os.Stdout.Write([]byte(output)); err != nil {
+		discard.Discard(discardValLine89_0)
 		slog.Error("Failed to write status to stdout", "error", err)
 	}
 
@@ -141,7 +143,8 @@ func runJulesLogin(engine *NATVSEngine) error {
 			slog.Error("Failed to write whoami.txt", "path", whoamiPath, "error", errWrite)
 		}
 	} else {
-		if _, err := os.Stdout.Write([]byte("Enter the Google email address used for this login: ")); err != nil {
+		if discardValLine144_0, err := os.Stdout.Write([]byte("Enter the Google email address used for this login: ")); err != nil {
+			discard.Discard(discardValLine144_0)
 			slog.Error("Failed to write to stdout", "error", err)
 		}
 		reader := bufio.NewReader(os.Stdin)
@@ -165,7 +168,8 @@ func runJulesLogin(engine *NATVSEngine) error {
 			slog.Error("Failed to write tier.txt", "path", tierPath, "error", errWrite)
 		}
 	} else {
-		if _, err := os.Stdout.Write([]byte("Enter your tier (pro/free) [default: free]: ")); err != nil {
+		if discardValLine168_0, err := os.Stdout.Write([]byte("Enter your tier (pro/free) [default: free]: ")); err != nil {
+			discard.Discard(discardValLine168_0)
 			slog.Error("Failed to write to stdout", "error", err)
 		}
 		reader := bufio.NewReader(os.Stdin)
@@ -192,4 +196,3 @@ func getSandboxedEmail(workspaceRoot string) string {
 	}
 	return "Unknown (Run jules auth login to set)"
 }
-

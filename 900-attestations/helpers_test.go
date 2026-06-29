@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"testing"
 )
 
@@ -18,7 +19,8 @@ func findWorkspaceRoot() string {
 	if err == nil {
 		dir := cwd
 		for {
-			if _, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+			if discardValLine21_0, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+				discard.Discard(discardValLine21_0)
 				return dir
 			}
 			parent := filepath.Dir(dir)
@@ -61,7 +63,8 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	defer out.Close()
-	_, err = io.Copy(out, in)
+	discardValLine64_0, err := io.Copy(out, in)
+	discard.Discard(discardValLine64_0)
 	return err
 }
 
@@ -94,7 +97,8 @@ func (b *EchoBackend) Dial(ctx context.Context) (net.Conn, error) {
 			if err != nil {
 				return
 			}
-			if _, err := c.Write([]byte("ACK: " + string(buf[:n]))); err != nil {
+			if discardValLine97_0, err := c.Write([]byte("ACK: " + string(buf[:n]))); err != nil {
+				discard.Discard(discardValLine97_0)
 				return
 			}
 		}
@@ -110,7 +114,8 @@ func getWorkspaceRoot() string {
 		if err == nil {
 			dir := cwd
 			for {
-				if _, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+				if discardValLine113_0, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+					discard.Discard(discardValLine113_0)
 					return dir
 				}
 				parent := filepath.Dir(dir)
@@ -124,4 +129,3 @@ func getWorkspaceRoot() string {
 	}
 	return workspaceRoot
 }
-

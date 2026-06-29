@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 	"testing"
 	"time"
@@ -129,7 +130,8 @@ func TestCreateCompendiumsThroughQueue(t *testing.T) {
 		}
 		for _, c := range completedList {
 			if strings.HasPrefix(c.ID, "task-compendium-") {
-				if _, ok := completedMap[c.ID]; !ok {
+				if discardValLine132_0, ok := completedMap[c.ID]; !ok {
+					discard.Discard(discardValLine132_0)
 					completedMap[c.ID] = c
 					t.Logf("[+] Completed: %s [status: %s, duration: %v]", c.ID, c.Status, time.Since(startTimes[c.ID]))
 				}
@@ -179,4 +181,3 @@ func TestCreateCompendiumsThroughQueue(t *testing.T) {
 		t.Fatalf("Timed out waiting for compendium generation. Processed %d/%d tasks.", len(completedMap), len(testTasks))
 	}
 }
-

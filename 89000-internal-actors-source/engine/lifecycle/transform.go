@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,7 +15,7 @@ import (
 // Transform executes phase 3: code generation, template injection, and casing adjustments.
 func (e *NATVSEngine) Transform(ctx context.Context, action string, contextPath string) error {
 	e.State = PhaseTransform
-	log.Printf("[NATVS] Phase 3: Executing Transformation target action: '%s'...", action)
+	slog.Info("[NATVS] Phase 3: Executing Transformation target action", "action", action)
 
 	if strings.Contains(action, "jules-run") || strings.Contains(action, "jules:run") || strings.Contains(action, "jules") {
 		return runJulesTaskFromTransform(e, action, contextPath)
@@ -36,7 +36,7 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string, contextPath 
 			wsPath = filepath.Join(e.Config.WorkspaceRoot, wsPath)
 		}
 
-		log.Printf("[NATVS] Running create-compendium for workspace: %s", wsPath)
+		slog.Info("[NATVS] Running create-compendium for workspace", "wsPath", wsPath)
 
 		cmd := exec.CommandContext(ctx, compendiumBin, "-workspace", wsPath)
 		SetNoWindow(cmd)
@@ -49,7 +49,7 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string, contextPath 
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("create-compendium failed for workspace %s (output: %s): %w", wsPath, logBuf.String(), err)
 		}
-		log.Printf("[NATVS] create-compendium executed successfully for %s.", wsPath)
+		slog.Info("[NATVS] create-compendium executed successfully for workspace", "wsPath", wsPath)
 		e.LastChanges = []string{filepath.Base(wsPath) + "_compendium.txt"}
 		e.LastReason = fmt.Sprintf("created workspace compendium file for %s", filepath.Base(wsPath))
 		return nil
@@ -57,7 +57,7 @@ func (e *NATVSEngine) Transform(ctx context.Context, action string, contextPath 
 
 	// In-memory or subprocess dynamic execution stub
 	time.Sleep(5 * time.Millisecond)
-	log.Printf("[NATVS] Transformation successfully generated output delta.")
+	slog.Info("[NATVS] Transformation successfully generated output delta.")
 	return nil
 }
 
@@ -86,8 +86,8 @@ func runJulesTaskFromTransform(e *NATVSEngine, action string, contextPath string
 	if runErr != nil {
 		// Detect 401 or UNAUTHENTICATED error in output
 		if strings.Contains(outputStr, "401") || strings.Contains(outputStr, "UNAUTHENTICATED") || strings.Contains(strings.ToLower(outputStr), "login") {
-			log.Printf("[NATVS] Authentication failure detected during Jules run. Attempting automatic interactive login...")
-			
+			slog.Info("[NATVS] Authentication failure detected during Jules run. Attempting automatic interactive login...")
+
 			// Execute jules login using standard inputs/outputs to prompt the user
 			loginCmd := exec.Command(julesPath, "login")
 			loginCmd.Dir = workspaceRoot
@@ -95,12 +95,12 @@ func runJulesTaskFromTransform(e *NATVSEngine, action string, contextPath string
 			loginCmd.Stdin = os.Stdin
 			loginCmd.Stdout = os.Stdout
 			loginCmd.Stderr = os.Stderr
-			
+
 			if loginErr := loginCmd.Run(); loginErr != nil {
 				return fmt.Errorf("automatic interactive login failed: %w", loginErr)
 			}
-			
-			log.Printf("[NATVS] Automatic login complete. Retrying original Jules task...")
+
+			slog.Info("[NATVS] Automatic login complete. Retrying original Jules task...")
 			outputStr, runErr = execJules()
 			if runErr != nil {
 				return fmt.Errorf("jules execution failed on retry (stdout/stderr: %s): %w", outputStr, runErr)
@@ -110,10 +110,8 @@ func runJulesTaskFromTransform(e *NATVSEngine, action string, contextPath string
 		}
 	}
 
-	log.Printf("[NATVS] Phase 3 (Transform): Jules executed successfully. Output: %s", outputStr)
+	slog.Info("[NATVS] Phase 3 (Transform): Jules executed successfully", "output", outputStr)
 	e.LastChanges = []string{"*"}
 	e.LastReason = "Jules code remediation executed successfully during Transform phase"
 	return nil
 }
-
-

@@ -281,4 +281,3 @@ func main() {
 		t.Fatalf("Expected task 2 to succeed, got status: %v, error: %s", completedTask2.Status, completedTask2.Error)
 	}
 }
-

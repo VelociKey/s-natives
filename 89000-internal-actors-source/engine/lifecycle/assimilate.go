@@ -47,4 +47,3 @@ func (e *NATVSEngine) Assimilation(ctx context.Context, targetWorkspace string) 
 	slog.Info("Assimilation successfully verified semantic taxonomy entries", "count", validCount)
 	return nil
 }
-

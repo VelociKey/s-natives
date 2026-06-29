@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 	"sync"
 )
@@ -60,7 +61,8 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 		failedWorkspaces := make([]string, 0, len(workspaces))
 		for _, ws := range workspaces {
 			wsPath := filepath.Join(e.Config.WorkspaceRoot, "00flow", ws)
-			if _, err := os.Stat(wsPath); os.IsNotExist(err) {
+			if discardValLine63_0, err := os.Stat(wsPath); os.IsNotExist(err) {
+				discard.Discard(discardValLine63_0)
 				slog.Debug("Skipping non-existent workspace directory", "path", wsPath)
 				continue
 			}
@@ -69,10 +71,12 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 			// Pre-compile using int-rehydrator in local-only mode
 			rehydratorBin := filepath.Clean(filepath.Join(e.Config.WorkspaceRoot, "00flow", "s-hydration", "int-rehydrator"+getExeSuffix()))
 			harnessPath := filepath.Clean(filepath.Join(wsPath, "71000-build-harness", "workspace.harness"))
-			if _, err := os.Stat(harnessPath); os.IsNotExist(err) {
+			if discardValLine72_0, err := os.Stat(harnessPath); os.IsNotExist(err) {
+				discard.Discard(discardValLine72_0)
 				harnessPath = filepath.Join(wsPath, "workspace.harness")
 			}
-			if _, err := os.Stat(harnessPath); err == nil {
+			if discardValLine75_0, err := os.Stat(harnessPath); err == nil {
+				discard.Discard(discardValLine75_0)
 				slog.Info("Executing pre-verification local rehydration", "workspace", ws)
 				cmdRehydrate := exec.CommandContext(ctx, rehydratorBin, "-harness", harnessPath, "-local-only")
 				SetNoWindow(cmdRehydrate)
@@ -218,10 +222,12 @@ func (e *NATVSEngine) Verification(ctx context.Context, testPackage string) erro
 	// Pre-compile specific package using int-rehydrator
 	rehydratorBin := filepath.Clean(filepath.Join(e.Config.WorkspaceRoot, "00flow", "s-hydration", "int-rehydrator"+getExeSuffix()))
 	harnessPath := filepath.Clean(filepath.Join(targetDir, "71000-build-harness", "workspace.harness"))
-	if _, err := os.Stat(harnessPath); os.IsNotExist(err) {
+	if discardValLine221_0, err := os.Stat(harnessPath); os.IsNotExist(err) {
+		discard.Discard(discardValLine221_0)
 		harnessPath = filepath.Join(targetDir, "workspace.harness")
 	}
-	if _, err := os.Stat(harnessPath); err == nil {
+	if discardValLine224_0, err := os.Stat(harnessPath); err == nil {
+		discard.Discard(discardValLine224_0)
 		slog.Info("Executing pre-verification local rehydration for target", "package", testPackage)
 		cmdRehydrate := exec.CommandContext(ctx, rehydratorBin, "-harness", harnessPath, "-local-only")
 		SetNoWindow(cmdRehydrate)
@@ -458,7 +464,8 @@ func (e *NATVSEngine) discoverWorkspaces() ([]string, error) {
 // discoverGoBinary attempts to find the Go binary from parent variables or path lookup.
 func discoverGoBinary(workspaceRoot string) string {
 	forgeGo := filepath.Join(workspaceRoot, "00flow/s-forge/92000-external-toolchains/go/bin/go"+getExeSuffix())
-	if _, err := os.Stat(forgeGo); err == nil {
+	if discardValLine461_0, err := os.Stat(forgeGo); err == nil {
+		discard.Discard(discardValLine461_0)
 		return forgeGo
 	}
 	if goBin := os.Getenv("ANTIGRAVITY_GO_BIN"); goBin != "" {
@@ -496,4 +503,3 @@ func isSystemCrash(output string) bool {
 	}
 	return false
 }
-

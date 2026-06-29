@@ -59,4 +59,3 @@ func runSelfConformance(ctx context.Context, engine *lifecycle.NATVSEngine) {
 
 	slog.Info("Self-conformance successfully verified!")
 }
-

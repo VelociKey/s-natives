@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"time"
 
 	"sov.fleet/s-logiclibrary/00200-logic-libraries/bicodec"
@@ -87,15 +88,15 @@ func (e *NATVSEngine) RunDaemon(ctx context.Context, port int) error {
 				continue
 			}
 
-			_, err = conn.WriteTo(responseBytes, clientAddr)
+			discardValLine90_0, err := conn.WriteTo(responseBytes, clientAddr)
+			discard.Discard(discardValLine90_0)
 			if err != nil {
 				slog.Error("Response failed", "err", err)
 			}
 		} else {
-			_ = hasHeader
-			_ = header
+			discard.Discard(hasHeader)
+			discard.Discard(header)
 			slog.Debug("SACP frame ignored (no tool call)")
 		}
 	}
 }
-

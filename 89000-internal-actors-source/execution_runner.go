@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strconv"
 	"strings"
 	"time"
@@ -156,7 +157,8 @@ func runExecutionRequest(ctx context.Context, engine *NATVSEngine, defaultCoordD
 
 	if triggerErr == nil && triggerConn != nil {
 		defer triggerConn.Close()
-		_, writeErr := triggerConn.Write([]byte("WAIT " + task.ID + "\n"))
+		discardValLine159_0, writeErr := triggerConn.Write([]byte("WAIT " + task.ID + "\n"))
+		discard.Discard(discardValLine159_0)
 		if writeErr == nil {
 			slog.Info("Blocking on trigger connection for task completion...")
 			reader := bufio.NewReader(triggerConn)
@@ -201,4 +203,3 @@ func runExecutionRequest(ctx context.Context, engine *NATVSEngine, defaultCoordD
 		}
 	}
 }
-

@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,13 +39,13 @@ func isWorkspaceWarm(workspace string) bool {
 	return warmWorkspaces[workspace]
 }
 
-func generateTLSConfig() *tls.Config {
+func generateTLSConfig() (*tls.Config, error) {
 	tlsConf, err := quictransport.GenerateEphemeralTLSConfig()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	tlsConf.NextProtos = []string{"jules-sacp"}
-	return tlsConf
+	return tlsConf, nil
 }
 
 func handleIncomingQUICStream(stream *quic.Stream) {
@@ -76,7 +77,10 @@ func handleIncomingQUICStream(stream *quic.Stream) {
 }
 
 func initQUICControlChannel() error {
-	tlsConf := generateTLSConfig()
+	tlsConf, err := generateTLSConfig()
+	if err != nil {
+		return err
+	}
 	quicConf := quictransport.NewQUICConfig()
 	quicConf.KeepAlivePeriod = 15 * time.Second
 
@@ -182,7 +186,8 @@ func runNATVSEngineDaemon(ctx context.Context, engine *NATVSEngine, workspaceRoo
 
 	triggerListener, listenerErr := net.Listen("tcp", "127.0.0.1:0")
 	if listenerErr == nil {
-		_, portStr, splitErr := net.SplitHostPort(triggerListener.Addr().String())
+		discardValLine185_0, portStr, splitErr := net.SplitHostPort(triggerListener.Addr().String())
+		discard.Discard(discardValLine185_0)
 		if splitErr != nil {
 			slog.Error("Failed to split host port", "error", splitErr)
 			portStr = "0"
@@ -193,7 +198,8 @@ func runNATVSEngineDaemon(ctx context.Context, engine *NATVSEngine, workspaceRoo
 		}
 		slog.Info("Trigger server listening", "port", portStr)
 
-		if _, err := os.Stdout.Write([]byte("PORT " + portStr + "\n")); err != nil {
+		if discardValLine196_0, err := os.Stdout.Write([]byte("PORT " + portStr + "\n")); err != nil {
+			discard.Discard(discardValLine196_0)
 			slog.Error("Failed to write port to stdout", "error", err)
 		}
 
@@ -317,7 +323,8 @@ func runNATVSEngineDaemon(ctx context.Context, engine *NATVSEngine, workspaceRoo
 				stream, streamErr = qConn.OpenStreamSync(taskCtx)
 				if streamErr == nil {
 					defer stream.Close()
-					if _, errWrite := stream.Write([]byte(t.ID + "|" + t.Workspace + "\n")); errWrite != nil {
+					if discardValLine320_0, errWrite := stream.Write([]byte(t.ID + "|" + t.Workspace + "\n")); errWrite != nil {
+						discard.Discard(discardValLine320_0)
 						slog.Warn("Failed to write QUIC stream control frame", "error", errWrite)
 					}
 					taskCtx = context.WithValue(taskCtx, "quic_stream", stream)
@@ -371,11 +378,13 @@ func runNATVSEngineDaemon(ctx context.Context, engine *NATVSEngine, workspaceRoo
 
 			if conn != nil {
 				if errExec != nil {
-					if _, errWriteConn := conn.Write([]byte("FAILURE " + errExec.Error() + "\n")); errWriteConn != nil {
+					if discardValLine374_0, errWriteConn := conn.Write([]byte("FAILURE " + errExec.Error() + "\n")); errWriteConn != nil {
+						discard.Discard(discardValLine374_0)
 						slog.Warn("Failed to send failure notification to trigger conn", "error", errWriteConn)
 					}
 				} else {
-					if _, errWriteConn := conn.Write([]byte("SUCCESS\n")); errWriteConn != nil {
+					if discardValLine378_0, errWriteConn := conn.Write([]byte("SUCCESS\n")); errWriteConn != nil {
+						discard.Discard(discardValLine378_0)
 						slog.Warn("Failed to send success notification to trigger conn", "error", errWriteConn)
 					}
 				}
@@ -384,4 +393,3 @@ func runNATVSEngineDaemon(ctx context.Context, engine *NATVSEngine, workspaceRoo
 		}(*targetTask)
 	}
 }
-

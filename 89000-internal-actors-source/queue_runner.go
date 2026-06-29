@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 
 	"sov.fleet/s-natives/89000-internal-actors-source/engine/lifecycle"
@@ -13,7 +14,8 @@ import (
 func writeErrorToQUICStream(ctx context.Context, errMsg string) {
 	if streamVal := ctx.Value("quic_stream"); streamVal != nil {
 		if stream, ok := streamVal.(interface{ Write([]byte) (int, error) }); ok {
-			if _, errWrite := stream.Write([]byte("[ERROR] " + errMsg + "\n")); errWrite != nil {
+			if discardValLine16_0, errWrite := stream.Write([]byte("[ERROR] " + errMsg + "\n")); errWrite != nil {
+				discard.Discard(discardValLine16_0)
 				slog.Warn("Failed to write error message to QUIC stream", "error", errWrite)
 			}
 		}
@@ -111,4 +113,3 @@ func runQueueTaskLifecycle(ctx context.Context, engine *NATVSEngine, task *TaskI
 
 	return nil
 }
-

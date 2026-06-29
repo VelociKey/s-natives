@@ -16,4 +16,3 @@ func (e *NATVSEngine) Synthesis(ctx context.Context, artifactName string) error 
 	slog.Info("Synthesis phase completed: what was changed and why", "changed", e.LastChanges, "why", e.LastReason)
 	return nil
 }
-

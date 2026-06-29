@@ -122,4 +122,3 @@ func TestExclusiveLocking(t *testing.T) {
 		t.Fatalf("Failed to close f3 lock: %v", err)
 	}
 }
-

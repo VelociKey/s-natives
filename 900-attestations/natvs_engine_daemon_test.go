@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	. "sov.fleet/s-natives/89000-internal-actors-source/engine/lifecycle"
 	"testing"
 	"time"
@@ -62,7 +63,8 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 		t.Fatalf("Failed to encode SACP message: %v", err)
 	}
 
-	if _, err = conn.Write(msgBytes); err != nil {
+	if discardValLine65_0, err := conn.Write(msgBytes); err != nil {
+		discard.Discard(discardValLine65_0)
 		t.Fatalf("Failed to write to UDP socket: %v", err)
 	}
 
@@ -78,7 +80,8 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 		t.Fatalf("Failed to read from UDP socket: %v", err)
 	}
 
-	hasHeader, _, hasCap, resC, err := bicodec.DecodeSACPMessage(buf[:n])
+	hasHeader, discardValLine81_1, hasCap, resC, err := bicodec.DecodeSACPMessage(buf[:n])
+	discard.Discard(discardValLine81_1)
 	if err != nil {
 		t.Fatalf("Failed to decode UDP response: %v", err)
 	}
@@ -95,7 +98,8 @@ func TestNATVSListenDaemonAndSACP(t *testing.T) {
 	}
 
 	// Test sending invalid SACP frame to server to cover fallback paths
-	if _, err := conn.Write([]byte("INVALID_FRAME")); err != nil {
+	if discardValLine98_0, err := conn.Write([]byte("INVALID_FRAME")); err != nil {
+		discard.Discard(discardValLine98_0)
 		t.Logf("Failed to write invalid frame: %v", err)
 	}
 	time.Sleep(50 * time.Millisecond)
@@ -190,7 +194,8 @@ func TestNATVSCoordinatorLifecycle(t *testing.T) {
 	defer conn1.Close()
 
 	// Send command payload
-	if _, err = conn1.Write([]byte("HELLO")); err != nil {
+	if discardValLine193_0, err := conn1.Write([]byte("HELLO")); err != nil {
+		discard.Discard(discardValLine193_0)
 		t.Fatalf("Failed to write HELLO: %v", err)
 	}
 
@@ -210,7 +215,8 @@ func TestNATVSCoordinatorLifecycle(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	if _, err = conn2.Write([]byte("WORLD")); err != nil {
+	if discardValLine213_0, err := conn2.Write([]byte("WORLD")); err != nil {
+		discard.Discard(discardValLine213_0)
 		t.Fatalf("Failed to write WORLD: %v", err)
 	}
 
@@ -253,13 +259,15 @@ func TestNATVSCoordinatorStaleSocketCleaning(t *testing.T) {
 			SocketPath:    sockPath,
 			IdleTimeout:   engine.Config.IdleTimeout,
 		}
-		_, err = broker.DialOrSpawnBroker(cfg, &EchoBackend{}, []string{"go", "run", "."})
+		discardValLine256_0, err := broker.DialOrSpawnBroker(cfg, &EchoBackend{}, []string{"go", "run", "."})
+		discard.Discard(discardValLine256_0)
 		if err == nil {
 			t.Fatal("Expected DialOrSpawnBroker to fail, but it succeeded")
 		}
 
 		// Verify that the stale socket file was successfully unlinked
-		if _, err := os.Stat(addr); !os.IsNotExist(err) {
+		if discardValLine262_0, err := os.Stat(addr); !os.IsNotExist(err) {
+			discard.Discard(discardValLine262_0)
 			t.Errorf("Expected stale socket file to be unlinked/deleted, but it still exists")
 		}
 	}
@@ -310,7 +318,8 @@ func TestWarmVsColdStartPerformance(t *testing.T) {
 	}
 
 	startCold := time.Now()
-	_, err = net.DialTimeout(netType, addr, 50*time.Millisecond)
+	discardValLine313_0, err := net.DialTimeout(netType, addr, 50*time.Millisecond)
+	discard.Discard(discardValLine313_0)
 	if err != nil {
 		if netType == "unix" {
 			if err := os.Remove(addr); err != nil {
@@ -352,4 +361,3 @@ func TestWarmVsColdStartPerformance(t *testing.T) {
 		t.Errorf("Warm start (%v) was not faster than cold start (%v)", durationWarm, durationCold)
 	}
 }
-

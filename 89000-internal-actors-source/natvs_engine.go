@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 	"time"
 
@@ -36,7 +37,8 @@ func (b *EchoBackend) Dial(ctx context.Context) (net.Conn, error) {
 			if err != nil {
 				return
 			}
-			if _, err := c.Write([]byte("ACK: " + string(buf[:n]))); err != nil {
+			if discardValLine39_0, err := c.Write([]byte("ACK: " + string(buf[:n]))); err != nil {
+				discard.Discard(discardValLine39_0)
 				slog.Error("Failed to write to TCP connection", "error", err)
 				return
 			}
@@ -87,7 +89,7 @@ var WriteQueueFileAtomic = lifecycle.WriteQueueFileAtomic
 var ParseCompletedFileAtomic = lifecycle.ParseCompletedFileAtomic
 var AppendCompletedFileAtomic = lifecycle.AppendCompletedFileAtomic
 
-var logFatal = func(format string, v ...interface{}) {
+var logFatal = func(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	slog.Error("Fatal error encountered", "details", msg)
 	os.Exit(1)
@@ -125,7 +127,8 @@ func main() {
 			location = "within Antigravity"
 		}
 
-		if _, err := os.Stdout.Write([]byte("Jules says Hello from " + location + "\n")); err != nil {
+		if discardValLine128_0, err := os.Stdout.Write([]byte("Jules says Hello from " + location + "\n")); err != nil {
+			discard.Discard(discardValLine128_0)
 			slog.Error("Failed to write to stdout", "error", err)
 		}
 		slog.Info("PoC Auth Check Status", "state", authState)
@@ -257,21 +260,25 @@ func main() {
 			logFatal("Failed to read completed tasks: %v", err)
 		}
 		for _, comp := range completed {
-			if _, err := os.Stdout.Write([]byte("TaskResult \"" + comp.ID + "\" [status: " + string(comp.Status) + ", timestamp: " + comp.Timestamp.Format(time.RFC3339) + "]\n")); err != nil {
+			if discardValLine260_0, err := os.Stdout.Write([]byte("TaskResult \"" + comp.ID + "\" [status: " + string(comp.Status) + ", timestamp: " + comp.Timestamp.Format(time.RFC3339) + "]\n")); err != nil {
+				discard.Discard(discardValLine260_0)
 				slog.Error("Failed to write task result to stdout", "error", err)
 			}
 			if len(comp.DeltaPaths) > 0 {
-				if _, err := os.Stdout.Write([]byte("  Delta paths:\n")); err != nil {
+				if discardValLine264_0, err := os.Stdout.Write([]byte("  Delta paths:\n")); err != nil {
+					discard.Discard(discardValLine264_0)
 					slog.Error("Failed to write delta paths header", "error", err)
 				}
 				for _, p := range comp.DeltaPaths {
-					if _, err := os.Stdout.Write([]byte("    - " + p + "\n")); err != nil {
+					if discardValLine268_0, err := os.Stdout.Write([]byte("    - " + p + "\n")); err != nil {
+						discard.Discard(discardValLine268_0)
 						slog.Error("Failed to write delta path", "error", err)
 					}
 				}
 			}
 			if comp.Error != "" {
-				if _, err := os.Stdout.Write([]byte("  Error: " + comp.Error + "\n")); err != nil {
+				if discardValLine274_0, err := os.Stdout.Write([]byte("  Error: " + comp.Error + "\n")); err != nil {
+					discard.Discard(discardValLine274_0)
 					slog.Error("Failed to write error details", "error", err)
 				}
 			}
@@ -291,7 +298,6 @@ func main() {
 	if isExecutionRequest {
 		runExecutionRequest(ctx, engine, defaultCoordDir, queueFilePath, outFilePath, lockPath, isDirect)
 	}
-
 
 	runAsDaemon := queueFilePath != "" && hasQueueArg
 	if runAsDaemon {
@@ -327,7 +333,8 @@ func findWorkspaceRoot() string {
 	if err == nil {
 		dir := cwd
 		for {
-			if _, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+			if discardValLine330_0, err := os.Stat(filepath.Join(dir, ".gitroot")); err == nil {
+				discard.Discard(discardValLine330_0)
 				return filepath.Clean(dir)
 			}
 			parent := filepath.Dir(dir)
@@ -340,10 +347,10 @@ func findWorkspaceRoot() string {
 	home, err := os.UserHomeDir()
 	if err == nil {
 		fallback := filepath.Join(home, "aCogSpaceSeed")
-		if _, err := os.Stat(fallback); err == nil {
+		if discardValLine343_0, err := os.Stat(fallback); err == nil {
+			discard.Discard(discardValLine343_0)
 			return filepath.Clean(fallback)
 		}
 	}
 	return "."
 }
-

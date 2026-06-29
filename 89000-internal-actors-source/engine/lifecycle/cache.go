@@ -171,4 +171,3 @@ func InvalidateWorkspaceCache(workspaceRoot, workspaceRelPath string) error {
 	}
 	return nil
 }
-

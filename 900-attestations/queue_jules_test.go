@@ -219,4 +219,3 @@ Review and improve s-natives workspace code directly.
 		t.Errorf("Expected logs to confirm direct task success, got: %s", outStr)
 	}
 }
-

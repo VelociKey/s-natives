@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	. "sov.fleet/s-natives/89000-internal-actors-source/engine/lifecycle"
 	"testing"
 )
@@ -48,7 +49,8 @@ func TestGitCacheOperations(t *testing.T) {
 		t.Fatalf("Failed to invalidate cache: %v", err)
 	}
 
-	isCachedPost, _, err := IsWorkspaceCached(workspaceRoot, targetWS)
+	isCachedPost, discardValLine51_1, err := IsWorkspaceCached(workspaceRoot, targetWS)
+	discard.Discard(discardValLine51_1)
 	if err != nil {
 		t.Fatalf("Failed to verify cache status post invalidation: %v", err)
 	}
@@ -98,4 +100,3 @@ func TestWorkspaceDirtyStateHandling(t *testing.T) {
 	t.Logf("Clean key: %s", keyClean)
 	t.Logf("Dirty key: %s", keyDirty)
 }
-

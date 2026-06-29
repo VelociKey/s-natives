@@ -84,4 +84,3 @@ func (e *NATVSEngine) GetDeterministicTCPPort() int {
 	coord := broker.NewCoordinator(cfg, nil)
 	return coord.GetDeterministicTCPPort()
 }
-

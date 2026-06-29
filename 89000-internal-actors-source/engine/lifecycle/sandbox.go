@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	discard "sov.fleet/s-logiclibrary/81000-active-source/pkg/200-enhancers/discard"
 	"strings"
 )
 
@@ -18,7 +19,8 @@ func GetExeSuffix() string {
 }
 
 func ReadGoalFromFile(path string) (string, error) {
-	if _, err := os.Stat(path); err == nil {
+	if discardValLine21_0, err := os.Stat(path); err == nil {
+		discard.Discard(discardValLine21_0)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return "", err
@@ -113,14 +115,15 @@ func BuildSandboxEnv(workspaceRoot string, trackingScope string) []string {
 // that do not contain token or session cookies (such as code caches, dictionaries, extensions, model stores).
 func PruneChromeProfile(sandboxHome string) {
 	localApp := filepath.Join(sandboxHome, "localappdata", "Google", "Chrome", "User Data")
-	if _, err := os.Stat(localApp); os.IsNotExist(err) {
+	if discardValLine116_0, err := os.Stat(localApp); os.IsNotExist(err) {
+		discard.Discard(discardValLine116_0)
 		return
 	}
 
 	// Whitelisted files and folders essential for cookie-based session token storage
 	isWhitelisted := func(path string) bool {
 		pathSlash := strings.ToLower(filepath.ToSlash(path))
-		
+
 		// Always whitelisting parent structure paths leading to network cookies and local storage
 		if strings.Contains(pathSlash, "/user data/default") {
 			if strings.Contains(pathSlash, "/network") || strings.Contains(pathSlash, "/local storage") {
@@ -131,7 +134,7 @@ func PruneChromeProfile(sandboxHome string) {
 				return true
 			}
 		}
-		
+
 		parts := strings.Split(pathSlash, "/")
 		for _, part := range parts {
 			if part == "whoami.txt" || part == "tier.txt" {
@@ -150,9 +153,8 @@ func PruneChromeProfile(sandboxHome string) {
 		}
 		// If it's a file, delete if not whitelisted
 		if !isWhitelisted(path) {
-			_ = os.Remove(path)
+			discard.Discard(os.Remove(path))
 		}
 		return nil
 	})
 }
-
