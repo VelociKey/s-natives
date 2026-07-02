@@ -8,7 +8,6 @@ require (
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	sov.fleet/blake3 v0.0.0-00010101000000-000000000000 // indirect
-	sov.fleet/s-latentlingua v0.0.0-00010101000000-000000000000 // indirect
 )
 
 require (
