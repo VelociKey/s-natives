@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sov.fleet/s-fab-aides/81000-active-source/pkg/bash"
+	"sov.fleet/s-fab-aides/81000-active-source/bash"
 )
 
 // Assimilation executes phase 2 local repository structural audits.
